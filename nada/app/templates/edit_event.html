@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Veranstaltung bearbeiten</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.edit_event', event_id=event.id) }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Titel</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ event.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Beschreibung</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ event.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Datum und Uhrzeit</label>
+                        <input type="datetime-local" class="form-control" id="date" name="date" value="{{ event.date.strftime('%Y-%m-%dT%H:%M') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="capacity" class="form-label">Kapazität</label>
+                        <input type="number" class="form-control" id="capacity" name="capacity" min="1" value="{{ event.capacity }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Preis (€)</label>
+                        <input type="number" class="form-control" id="price" name="price" value="{{ "%.2f"|format(event.price) }}" min="0" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="room" class="form-label">Raum</label>
+                        <input type="text" class="form-control" id="room" name="room" value="{{ event.room }}" placeholder="z.B. Konferenzraum A">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Adresse</label>
+                        <input type="text" class="form-control" id="address" name="address" value="{{ event.address }}" placeholder="z.B. Hauptstraße 123, Stadt, Land">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_visible" name="is_visible" {% if event.is_visible %}checked{% endif %}>
+                            <label class="form-check-label" for="is_visible">Für Kunden sichtbar</label>
+                        </div>
+                        <div class="form-text">Wenn deaktiviert, ist die Veranstaltung nur in der Admin-Ansicht sichtbar.</div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Abbrechen</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2>Veranstaltung buchen: {{ event.title }}</h2>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Veranstaltungsdetails</h5>
+                <p class="card-text">{{ event.description }}</p>
+                <p class="card-text">
+                    <small class="text-muted">
+                        Datum: {{ event.date.strftime('%Y-%m-%d %H:%M') }}<br>
+                        Verfügbare Plätze: {{ event.capacity - event.bookings }}<br>
+                        Preis: {{ "%.2f"|format(event.price) }} €
+                    </small>
+                </p>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('main.book_event', event_id=event.id) }}">
+            <div class="mb-3">
+                <label for="name" class="form-label">Ihr Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">E-Mail</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="phone" class="form-label">Telefonnummer</label>
+                <input type="tel" class="form-control" id="phone" name="phone" required 
+                       pattern="[0-9\s\+\-]+" title="Bitte geben Sie eine gültige Telefonnummer ein">
+                <div class="form-text">Format: +49 123 4567890</div>
+            </div>
+            <button type="submit" class="btn btn-primary">Jetzt buchen</button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Abbrechen</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

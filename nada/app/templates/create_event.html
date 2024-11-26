@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Neue Veranstaltung erstellen</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.create_event') }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Titel</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Beschreibung</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Datum und Uhrzeit</label>
+                        <input type="datetime-local" class="form-control" id="date" name="date" value="{{ default_date }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="capacity" class="form-label">Kapazität</label>
+                        <input type="number" class="form-control" id="capacity" name="capacity" value="10" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Preis (€)</label>
+                        <input type="number" class="form-control" id="price" name="price" value="0.00" min="0" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="room" class="form-label">Raum</label>
+                        <input type="text" class="form-control" id="room" name="room" placeholder="z.B. Konferenzraum A">
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Adresse</label>
+                        <input type="text" class="form-control" id="address" name="address" placeholder="z.B. Hauptstraße 123, Stadt, Land">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="is_visible" name="is_visible" checked>
+                            <label class="form-check-label" for="is_visible">Für Kunden sichtbar</label>
+                        </div>
+                        <div class="form-text">Wenn deaktiviert, ist die Veranstaltung nur in der Admin-Ansicht sichtbar.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Veranstaltung erstellen</button>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Abbrechen</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

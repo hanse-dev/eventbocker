@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: nada/docker/Dockerfile
+    ports:
+      - "5002:5001"
+    environment:
+      - FLASK_APP=nada/app/app.py
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-default_secret_key}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/instance/test.db}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./instance:/app/instance
+    user: "www-data:www-data"
+    restart: unless-stopped
