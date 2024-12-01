@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: nada/docker/Dockerfile
     ports:
-      - "5001:5001"
+      - "8090:8080"
     environment:
       - FLASK_APP=nada/app
       - FLASK_ENV=production
@@ -14,13 +14,12 @@ services:
       - DATABASE_URL=sqlite:////app/nada/instance/data.db
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
-      - PORT=5001
+      - PORT=8080
     volumes:
       - ./nada/instance:/app/nada/instance:rw
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s

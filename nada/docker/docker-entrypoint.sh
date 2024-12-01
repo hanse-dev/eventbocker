@@ -1,8 +1,7 @@
-#!/bin/bash
-set -e
+#!/bin/sh
 
-# Initialize the database if it doesn't exist
-python -c "from nada.app import create_app; from nada.app.database import database_exists, init_database; app = create_app(); init_database(app) if not database_exists() else print('Database already exists')"
+# Initialize the database
+python -c "from nada.app import create_app; app = create_app(); from nada.app.database import init_database; init_database(app)"
 
-# Execute the main container command
-exec "$@"
+# Start the Flask application
+exec python -m flask run --host=0.0.0.0 --port=${PORT:-8080}

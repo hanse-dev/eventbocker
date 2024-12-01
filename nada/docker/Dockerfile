@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     FLASK_APP=nada/app \
     FLASK_ENV=production \
-    PORT=5001
+    PORT=8080
 
 # Install system dependencies
 RUN apt-get update \

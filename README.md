@@ -72,7 +72,7 @@ cp example.env .env
 docker compose up -d
 ```
 
-The application will be available at `http://localhost:5001`
+The application will be available at `http://localhost:8080`
 
 ### Option 2: Using Docker directly
 
@@ -83,7 +83,7 @@ docker build -t nada-app -f nada/docker/Dockerfile .
 
 2. Run the container:
 ```bash
-docker run -d -p 5001:5001 \
+docker run -d -p 8090:8080 \
   -e SECRET_KEY=your_secret_key \
   -e ADMIN_USERNAME=admin \
   -e ADMIN_PASSWORD=your_password \
