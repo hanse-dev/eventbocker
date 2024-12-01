@@ -16,7 +16,7 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - PORT=5001
     volumes:
-      - ./nada/instance:/app/nada/instance
+      - ./nada/instance:/app/nada/instance:rw
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/"]

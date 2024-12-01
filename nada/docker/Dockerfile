@@ -31,12 +31,13 @@ COPY . .
 
 # Create instance directory and set permissions
 RUN mkdir -p /app/nada/instance && \
-    chown -R www-data:www-data /app/nada/instance && \
-    chmod 775 /app/nada/instance
+    chown -R www-data:www-data /app && \
+    chmod -R 777 /app/nada/instance
 
 # Copy and set up entrypoint script
 COPY nada/docker/docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
+    chown www-data:www-data /usr/local/bin/docker-entrypoint.sh
 
 # Switch to www-data user
 USER www-data
