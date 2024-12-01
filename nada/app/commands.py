@@ -18,3 +18,10 @@ def create_admin(username, password):
     db.session.add(user)
     db.session.commit()
     click.echo('Admin user created successfully')
+
+@click.command('init-db')
+@with_appcontext
+def init_db():
+    """Initialize the database."""
+    db.create_all()
+    click.echo('Database initialized.')

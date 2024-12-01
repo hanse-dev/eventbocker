@@ -24,26 +24,34 @@ nada/
 
 ## Local Development Setup
 
-1. Create and activate virtual environment:
+1. Requirements:
+   - Python 3.x installed
+   - Git installed
+
+2. Create and activate virtual environment:
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate  # On macOS/Linux
+# or
+.venv\Scripts\activate  # On Windows
 ```
 
-2. Install dependencies:
+3. Install dependencies:
 ```bash
-pip install -r requirements.txt
+.venv/bin/pip install -r requirements.txt  # On macOS/Linux
+# or
+.venv\Scripts\pip install -r requirements.txt  # On Windows
 ```
 
-3. Create `.env` file with admin credentials:
+4. Create `.env` file with configuration:
 ```bash
 cp example.env .env
 # Edit .env with your settings
 ```
 
-4. Start the development server:
+5. Start the development server:
 ```bash
-python -m flask run
+python -m flask --app nada/app run
 ```
 
 The application will be available at `http://localhost:5001`

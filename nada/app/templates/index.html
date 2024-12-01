@@ -84,6 +84,9 @@
                                 <th>Sichtbar</th>
                                 <th class="d-none d-lg-table-cell">Ort</th>
                                 <th>Aktionen</th>
+                                {% if current_user.is_authenticated %}
+                                <th></th>
+                                {% endif %}
                             </tr>
                         </thead>
                         <tbody class="border-top-0">
@@ -147,6 +150,29 @@
                                         </a>
                                     </div>
                                 </td>
+                                {% if current_user.is_authenticated %}
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('main.edit_event', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form action="{{ url_for('main.toggle_visibility', event_id=event.id) }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                {% if event.is_visible %}
+                                                <i class="bi bi-eye"></i>
+                                                {% else %}
+                                                <i class="bi bi-eye-slash"></i>
+                                                {% endif %}
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('main.delete_event', event_id=event.id) }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this event? This will also delete all associated bookings.')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>

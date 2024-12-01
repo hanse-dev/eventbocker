@@ -149,3 +149,18 @@ def delete_booking(booking_id):
     
     flash('Anmeldung erfolgreich gelöscht.', 'success')
     return redirect(url_for('main.view_registrations', event_id=booking.event_id))
+
+@bp.route('/event/<int:event_id>/delete', methods=['POST'])
+@login_required
+def delete_event(event_id):
+    event = Event.query.get_or_404(event_id)
+    
+    # Delete associated bookings first
+    Booking.query.filter_by(event_id=event_id).delete()
+    
+    # Delete the event
+    db.session.delete(event)
+    db.session.commit()
+    
+    flash('Event successfully deleted.', 'success')
+    return redirect(url_for('main.index'))

@@ -1,5 +1,5 @@
-# Use Python 3.11 slim image as base
-FROM python:3.11-slim
+# Use Python 3.12 slim image as base
+FROM python:3.12-slim
 
 # Set working directory in container
 WORKDIR /app
@@ -7,40 +7,43 @@ WORKDIR /app
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    FLASK_APP=nada/app/app.py \
-    FLASK_ENV=production
+    FLASK_APP=nada/app \
+    FLASK_ENV=production \
+    PORT=5001
 
 # Install system dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends \
+        gcc \
+        python3-dev \
+        curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Copy requirements file
+# Copy requirements first for better caching
 COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
+# Copy application code
 COPY . .
 
 # Create instance directory and set permissions
-RUN mkdir -p /app/instance && chown -R www-data:www-data /app/instance
+RUN mkdir -p /app/nada/instance && \
+    chown -R www-data:www-data /app/nada/instance && \
+    chmod 775 /app/nada/instance
 
-# Copy entrypoint script
+# Copy and set up entrypoint script
 COPY nada/docker/docker-entrypoint.sh /usr/local/bin/
-
-# Make entrypoint executable
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Switch to non-root user
+# Switch to www-data user
 USER www-data
 
 # Expose port
-EXPOSE 5001
+EXPOSE ${PORT}
 
-# Set entrypoint
+# Set the entrypoint
 ENTRYPOINT ["docker-entrypoint.sh"]
-
-# Command to run
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5001"]
+CMD ["python", "-m", "flask", "run", "--host=0.0.0.0"]

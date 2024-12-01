@@ -24,15 +24,6 @@ wheels/
 .installed.cfg
 *.egg
 
-# SQLite database files
-instance/*.db
-instance/*.sqlite
-instance/*.sqlite3
-
-# Keep instance directory
-!instance/
-!instance/.gitkeep
-
 # Flask
 .webassets-cache
 
