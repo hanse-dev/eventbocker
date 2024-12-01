@@ -83,7 +83,7 @@ docker build -t nada-app -f nada/docker/Dockerfile .
 
 2. Run the container:
 ```bash
-docker run -d -p 8090:8080 \
+docker run -d -p 5001:5001 \
   -e SECRET_KEY=your_secret_key \
   -e ADMIN_USERNAME=admin \
   -e ADMIN_PASSWORD=your_password \
