@@ -2,20 +2,20 @@ services:
   web:
     build:
       context: .
-      dockerfile: nada/docker/Dockerfile.dev
+      dockerfile: docker/Dockerfile.dev
     ports:
       - "5001:5001"
     environment:
-      - FLASK_APP=nada/app
+      - FLASK_APP=app
       - FLASK_ENV=development
       - SECRET_KEY=${SECRET_KEY:-default-dev-key-change-in-production}
-      - DATABASE_URL=sqlite:////app/nada/instance/data.db
+      - DATABASE_URL=sqlite:////app/instance/data.db
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - PORT=5001
     volumes:
-      - ./nada:/app/nada:ro
-      - ./nada/instance:/app/nada/instance:rw
+      - .:/app:ro
+      - ./instance:/app/instance:rw
     user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped
     healthcheck:

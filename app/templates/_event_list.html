@@ -1,0 +1,132 @@
+{% macro admin_event_list(events) %}
+<div class="card mb-4">
+    <div class="card-header py-3">
+        <h5 class="h6 mb-0">Veranstaltungsliste</h5>
+    </div>
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Titel</th>
+                        <th class="d-none d-md-table-cell">Datum</th>
+                        <th class="d-none d-sm-table-cell">Kapazität</th>
+                        <th class="d-none d-sm-table-cell">Buchungen</th>
+                        <th>Status</th>
+                        <th>Sichtbar</th>
+                        <th class="d-none d-lg-table-cell">Ort</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for event in events %}
+                    <tr>
+                        <td>
+                            <div>{{ event.title }}</div>
+                            <div class="d-md-none"><small class="text-muted">{{ event.date.strftime('%Y-%m-%d %H:%M') }}</small></div>
+                        </td>
+                        <td class="d-none d-md-table-cell">{{ event.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="d-none d-sm-table-cell">{{ event.capacity }}</td>
+                        <td class="d-none d-sm-table-cell">{{ event.bookings }}</td>
+                        <td>
+                            {% if event.bookings >= event.capacity %}
+                            <span class="badge bg-danger">Voll</span>
+                            {% else %}
+                            <span class="badge bg-success">Offen</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.is_visible %}
+                            <form action="{{ url_for('main.toggle_visibility', event_id=event.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Click to hide">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <form action="{{ url_for('main.toggle_visibility', event_id=event.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Click to show">
+                                    <i class="bi bi-eye-slash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                        <td class="d-none d-lg-table-cell">
+                            {% if event.room or event.address %}
+                            <small class="text-muted">
+                                {% if event.room %}Raum: {{ event.room }}{% endif %}
+                                {% if event.address %}<br>{{ event.address }}{% endif %}
+                            </small>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group gap-2">
+                                <a href="{{ url_for('main.edit_event', event_id=event.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i> Bearbeiten
+                                </a>
+                                <form action="{{ url_for('main.copy_event', event_id=event.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-files"></i> Kopieren
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('main.toggle_visibility', event_id=event.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        {% if event.is_visible %}
+                                        <i class="bi bi-eye"></i> Verstecken
+                                        {% else %}
+                                        <i class="bi bi-eye-slash"></i> Zeigen
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <a href="{{ url_for('main.view_registrations', event_id=event.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-people"></i> Teilnehmer
+                                </a>
+                                <form action="{{ url_for('main.delete_event', event_id=event.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Sind Sie sicher, dass Sie diese Veranstaltung löschen möchten?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-trash"></i> Löschen
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro customer_event_list(events) %}
+<div class="row g-3">
+    {% for event in events %}
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title h6">{{ event.title }}</h5>
+                <p class="card-text small">{{ event.description }}</p>
+                {% if event.room or event.address %}
+                <p class="card-text mb-2">
+                    <small class="text-muted">
+                        {% if event.room %}<i class="bi bi-building"></i> {{ event.room }}<br>{% endif %}
+                        {% if event.address %}<i class="bi bi-geo-alt"></i> {{ event.address }}{% endif %}
+                    </small>
+                </p>
+                {% endif %}
+                <p class="card-text mb-3">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> {{ event.date.strftime('%Y-%m-%d %H:%M') }}<br>
+                        <i class="bi bi-people"></i> {{ event.capacity - event.bookings }} Plätze frei<br>
+                        <i class="bi bi-tag"></i> {{ "%.2f"|format(event.price) }} €
+                    </small>
+                </p>
+                {% if event.bookings < event.capacity %}
+                <a href="{{ url_for('main.book_event', event_id=event.id) }}" class="btn btn-sm btn-outline-secondary w-100">Jetzt buchen</a>
+                {% else %}
+                <button class="btn btn-sm btn-outline-secondary w-100" disabled>Ausgebucht</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}

@@ -3,7 +3,7 @@ FROM python:3.12-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    FLASK_APP=nada/app \
+    FLASK_APP=app \
     FLASK_ENV=development \
     PORT=5001
 
@@ -25,13 +25,13 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir watchdog[watchmedo]
 
 # Create instance directory and set permissions
-RUN mkdir -p /app/nada/instance && \
+RUN mkdir -p /app/instance && \
     chown -R 1000:1000 /app && \
-    chmod -R 775 /app/nada/instance && \
+    chmod -R 775 /app/instance && \
     chmod -R 775 /app
 
 # Copy entrypoint script and make it executable
-COPY nada/docker/docker-entrypoint.dev.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker/docker-entrypoint.dev.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
     chown 1000:1000 /usr/local/bin/docker-entrypoint.sh
 

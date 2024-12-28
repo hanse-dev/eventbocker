@@ -4,7 +4,7 @@ FROM python:3.12-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    FLASK_APP=nada/app \
+    FLASK_APP=app \
     FLASK_ENV=production \
     PORT=5001
 
@@ -36,7 +36,7 @@ RUN mkdir -p /app/nada/instance && \
     chmod -R 775 /app
 
 # Copy and set up entrypoint script
-COPY nada/docker/docker-entrypoint.sh /usr/local/bin/
+COPY docker/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
     chown 1000:1000 /usr/local/bin/docker-entrypoint.sh
 

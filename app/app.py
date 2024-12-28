@@ -15,7 +15,7 @@ def create_app(test_config=None):
     app.logger.setLevel(logging.DEBUG)
 
     # Load the default configuration
-    app.config.from_object('nada.app.config.Config')
+    app.config.from_object('app.config.Config')
 
     # Override config with test config if passed
     if test_config is not None:
