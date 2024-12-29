@@ -23,3 +23,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    command: >
+      bash -c "
+        python -c 'from app.app import init_app; init_app()' &&
+        gunicorn --bind 0.0.0.0:5001 wsgi:app"

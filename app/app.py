@@ -51,15 +51,18 @@ def create_app(test_config=None):
         from .models import User
         return User.query.get(int(user_id))
 
-    # Initialize database after all extensions and blueprints are registered
+    return app
+
+def init_app():
+    """Initialize the application, including database setup."""
+    app = create_app()
     with app.app_context():
         from .database import init_database
         init_database()
-
     return app
 
 # Create the Flask application instance
-app = create_app()
+app = init_app()
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
