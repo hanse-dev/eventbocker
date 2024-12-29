@@ -8,16 +8,25 @@ from flask_migrate import upgrade as upgrade_cmd
 
 def database_exists():
     """Check if the database file exists."""
-    if current_app:
-        db_path = current_app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('sqlite:///', '')
+    try:
+        db_path = current_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+        if not os.path.exists(os.path.dirname(db_path)):
+            os.makedirs(os.path.dirname(db_path))
+            current_app.logger.info(f"Created database directory: {os.path.dirname(db_path)}")
         return os.path.exists(db_path)
-    return False
+    except Exception as e:
+        current_app.logger.error(f"Error checking database existence: {str(e)}")
+        return False
 
 def create_database_if_not_exists():
     """Create the database if it doesn't exist."""
     if not database_exists():
         current_app.logger.info("Database does not exist. Creating...")
         try:
+            # Ensure the database directory exists
+            db_path = current_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            
             # Create all tables directly for fresh installation
             db.create_all()
             current_app.logger.info("Database created successfully")
