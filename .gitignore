@@ -26,7 +26,7 @@ ENV/
 .DS_Store
 
 # Project specific
-instance/*.db
-instance/*.db-journal
+*.db
+*.db-journal
 logs/
 *.log
