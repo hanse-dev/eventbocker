@@ -3,6 +3,7 @@
 
 This script initializes the SQLite database for the application.
 It creates all necessary tables and sets up initial data if needed.
+It also handles database migrations using Flask-Migrate.
 """
 
 from app import create_app
@@ -19,5 +20,5 @@ def main():
         print(f"Error initializing database: {str(e)}")
         exit(1)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

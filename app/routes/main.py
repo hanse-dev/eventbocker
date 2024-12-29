@@ -1,18 +1,19 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from ..models.models import Event, Booking, db
-from datetime import datetime
+from datetime import datetime, timezone
+from sqlalchemy import text
 
 bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    if current_user.is_authenticated:
-        # Admin sees all events
-        events = Event.query.all()
+    if current_user.is_authenticated and current_user.is_admin:
+        # Admin sees all future events, including invisible ones
+        events = Event.get_future_events(include_invisible=True)
     else:
-        # Non-admin users only see visible events
-        events = Event.query.filter_by(is_visible=True).all()
+        # Non-admin users only see visible future events
+        events = Event.get_future_events(include_invisible=False)
     return render_template('index.html', events=events)
 
 @bp.route('/event/create', methods=['GET', 'POST'])
@@ -164,3 +165,22 @@ def delete_event(event_id):
     
     flash('Event successfully deleted.', 'success')
     return redirect(url_for('main.index'))
+
+@bp.route('/health')
+def health_check():
+    """Health check endpoint for Docker container."""
+    try:
+        # Check database connection
+        db.session.execute(text('SELECT 1'))
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'database': 'disconnected',
+            'error': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 503

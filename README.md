@@ -77,6 +77,93 @@ A Flask-based event management system for creating and managing events.
    flask run
    ```
 
+## Docker Commands
+
+### Development Environment
+
+```bash
+# Start development environment (with auto-reload)
+docker-compose -f docker-compose.dev.yml up --build
+
+# Rebuild without cache (if dependencies changed)
+docker-compose -f docker-compose.dev.yml build --no-cache
+docker-compose -f docker-compose.dev.yml up
+
+# Stop and remove containers
+docker-compose -f docker-compose.dev.yml down
+
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f
+
+# Restart services
+docker-compose -f docker-compose.dev.yml restart
+```
+
+### Production Environment
+
+```bash
+# Start production environment
+docker-compose up --build
+
+# Rebuild without cache
+docker-compose build --no-cache
+docker-compose up
+
+# Stop and remove containers
+docker-compose down
+
+# View logs
+docker-compose logs -f
+
+# Restart services
+docker-compose restart
+```
+
+### Database Management in Docker
+
+```bash
+# Initialize database (first time or reset)
+docker-compose exec web python init_db.py
+
+# Access database shell
+docker-compose exec web flask shell
+```
+
+## Database Management
+
+### Migrations
+
+The project uses Flask-Migrate (Alembic) for database migrations. Here are the common migration commands:
+
+1. Initialize migrations (first time only):
+   ```bash
+   docker-compose -f docker-compose.dev.yml exec web flask db init
+   ```
+
+2. Create a new migration after model changes:
+   ```bash
+   docker-compose -f docker-compose.dev.yml exec web flask db migrate -m "Description of changes"
+   ```
+
+3. Apply pending migrations:
+   ```bash
+   docker-compose -f docker-compose.dev.yml exec web flask db upgrade
+   ```
+
+4. Rollback migrations:
+   ```bash
+   docker-compose -f docker-compose.dev.yml exec web flask db downgrade
+   ```
+
+Note: Migrations are automatically applied when the container starts up.
+
+### Manual Database Initialization
+
+For first-time setup or resetting the database:
+```bash
+docker-compose -f docker-compose.dev.yml exec web python init_db.py
+```
+
 ## Development
 
 - The application uses SQLite for data storage

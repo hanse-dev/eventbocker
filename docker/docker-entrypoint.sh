@@ -1,7 +1,23 @@
 #!/bin/sh
 
-# Initialize the database
-python -c "from nada.app import create_app; app = create_app(); from nada.app.database import init_database; init_database(app)"
+# Initialize migrations if they don't exist
+if [ ! -d "migrations" ]; then
+    echo "Initializing migrations directory..."
+    flask db init
+fi
 
-# Start the Flask application
-exec python -m flask run --host=0.0.0.0 --port=${PORT:-8080}
+# Run any pending migrations
+echo "Running database migrations..."
+flask db migrate -m "Auto-migration"
+flask db upgrade
+
+# Start the application with gunicorn
+echo "Starting Gunicorn server..."
+exec gunicorn --bind 0.0.0.0:${PORT:-5001} \
+    --workers 4 \
+    --threads 2 \
+    --timeout 60 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level warning \
+    'app:create_app()'

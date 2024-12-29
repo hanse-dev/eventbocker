@@ -22,7 +22,7 @@ RUN apt-get update \
 # Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir watchdog[watchmedo]
+    && pip install --no-cache-dir watchdog[watchmedo] flask-migrate
 
 # Create instance directory and set permissions
 RUN mkdir -p /app/instance && \

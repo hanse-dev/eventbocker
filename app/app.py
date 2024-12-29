@@ -1,18 +1,27 @@
 from flask import Flask
 from .config import Config
-from .extensions import db, login_manager
+from .extensions import db, login_manager, migrate
 from .commands import create_admin, init_db
 from .database import init_database
 import os
+import logging
 
 def create_app(test_config=None):
     """Create and configure the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
     
-    # Set up logging
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
-    app.logger.setLevel(logging.DEBUG)
+    # Set up logging to only show warnings and above
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # Also set Flask's logger to warning level
+    app.logger.setLevel(logging.WARNING)
+    
+    # Reduce logging level of werkzeug (Flask's development server)
+    logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
     # Load the default configuration
     app.config.from_object('app.config.Config')
@@ -21,7 +30,7 @@ def create_app(test_config=None):
     if test_config is not None:
         app.config.update(test_config)
 
-    # Ensure instance folder exists
+    # Ensure the instance folder exists
     try:
         os.makedirs(app.instance_path)
     except OSError:
@@ -29,6 +38,7 @@ def create_app(test_config=None):
 
     # Initialize Flask extensions
     db.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
 
     # Register blueprints
@@ -48,4 +58,4 @@ app = create_app()
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=False, host='0.0.0.0', port=port)
