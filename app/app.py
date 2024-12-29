@@ -51,6 +51,11 @@ def create_app(test_config=None):
         from .models import User
         return User.query.get(int(user_id))
 
+    # Initialize database after all extensions and blueprints are registered
+    with app.app_context():
+        from .database import init_database
+        init_database()
+
     return app
 
 # Create the Flask application instance
