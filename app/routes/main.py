@@ -11,40 +11,52 @@ def index():
     if current_user.is_authenticated and current_user.is_admin:
         # Admin sees all future events, including invisible ones
         events = Event.get_future_events(include_invisible=True)
+        return render_template('index.html', events=events)
     else:
         # Non-admin users only see visible future events
         events = Event.get_future_events(include_invisible=False)
-    return render_template('index.html', events=events)
+        return render_template('index.html', events=events)
 
 @bp.route('/event/create', methods=['GET', 'POST'])
 @login_required
 def create_event():
     if request.method == 'POST':
-        title = request.form['title']
-        description = request.form['description']
-        date_str = request.form['date']
-        capacity = int(request.form.get('capacity', 10))
-        room = request.form.get('room')
-        address = request.form.get('address')
-        price = float(request.form.get('price', 0))
-        
-        # Parse the date and make it timezone-aware
-        date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
-        
-        event = Event(
-            title=title,
-            description=description,
-            date=date,
-            capacity=capacity,
-            room=room,
-            address=address,
-            price=price
-        )
-        db.session.add(event)
-        db.session.commit()
-        
-        flash('Event created successfully!', 'success')
-        return redirect(url_for('main.index'))
+        try:
+            title = request.form['title']
+            description = request.form['description']
+            date_str = request.form['date']
+            capacity = int(request.form.get('capacity', 10))
+            room = request.form.get('room')
+            address = request.form.get('address')
+            price = float(request.form.get('price', 0))
+            
+            # Parse the date and make it timezone-aware
+            date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
+            
+            event = Event(
+                title=title,
+                description=description,
+                date=date,
+                capacity=capacity,
+                room=room,
+                address=address,
+                price=price
+            )
+            db.session.add(event)
+            db.session.commit()
+            
+            flash('Event created successfully!', 'success')
+            return redirect(url_for('main.index'))
+        except ValueError as e:
+            flash(str(e), 'danger')
+            return render_template('create_event.html', 
+                                default_date=date_str,
+                                form_data=request.form)
+        except Exception as e:
+            flash('An error occurred while creating the event.', 'danger')
+            return render_template('create_event.html', 
+                                default_date=date_str,
+                                form_data=request.form)
     
     default_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M')
     return render_template('create_event.html', default_date=default_date)
@@ -79,55 +91,75 @@ def edit_event(event_id):
     event = Event.query.get_or_404(event_id)
     
     if request.method == 'POST':
-        event.title = request.form['title']
-        event.description = request.form['description']
-        date_str = request.form['date']
-        event.capacity = int(request.form.get('capacity', 10))
-        event.room = request.form.get('room')
-        event.address = request.form.get('address')
-        event.price = float(request.form.get('price', 0))
-        
-        event.date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
-        
-        db.session.commit()
-        
-        flash('Event updated successfully!', 'success')
-        return redirect(url_for('main.index'))
+        try:
+            event.title = request.form['title']
+            event.description = request.form['description']
+            date_str = request.form['date']
+            event.capacity = int(request.form.get('capacity', 10))
+            event.room = request.form.get('room')
+            event.address = request.form.get('address')
+            event.price = float(request.form.get('price', 0))
+            
+            # Parse the date and make it timezone-aware
+            event.date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
+            
+            db.session.commit()
+            
+            flash('Event updated successfully!', 'success')
+            return redirect(url_for('main.index'))
+        except ValueError as e:
+            flash(str(e), 'danger')
+            return render_template('edit_event.html', event=event)
     
     return render_template('edit_event.html', event=event)
 
 @bp.route('/event/<int:event_id>/copy', methods=['POST'])
 @login_required
 def copy_event(event_id):
-    # Get the original event
-    original_event = Event.query.get_or_404(event_id)
-    
-    # Create a new event with the same details
-    new_event = Event(
-        title=f"Copy of {original_event.title}",
-        description=original_event.description,
-        date=original_event.date,
-        capacity=original_event.capacity,
-        room=original_event.room,
-        address=original_event.address,
-        price=original_event.price,
-        bookings=0  # Start with 0 bookings
-    )
-    
-    db.session.add(new_event)
-    db.session.commit()
-    
-    flash('Event copied successfully!', 'success')
-    return redirect(url_for('main.index'))
+    try:
+        # Get the original event
+        original_event = Event.query.get_or_404(event_id)
+        
+        # Ensure the date is timezone-aware
+        event_date = original_event.date
+        if event_date.tzinfo is None:
+            event_date = event_date.replace(tzinfo=timezone.utc)
+        
+        # Create a new event with the same details
+        new_event = Event(
+            title=f"Copy of {original_event.title}",
+            description=original_event.description,
+            date=event_date,
+            capacity=original_event.capacity,
+            room=original_event.room,
+            address=original_event.address,
+            price=original_event.price,
+            bookings=0  # Start with 0 bookings
+        )
+        
+        db.session.add(new_event)
+        db.session.commit()
+        
+        flash('Event copied successfully!', 'success')
+        return redirect(url_for('main.index'))
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.index'))
 
 @bp.route('/event/<int:event_id>/toggle-visibility', methods=['POST'])
 @login_required
 def toggle_visibility(event_id):
-    event = Event.query.get_or_404(event_id)
-    event.is_visible = not event.is_visible
-    db.session.commit()
-    flash('Event visibility updated successfully!', 'success')
-    return redirect(url_for('main.index'))
+    try:
+        event = Event.query.get_or_404(event_id)
+        event.is_visible = not event.is_visible
+        db.session.commit()
+        status = "visible" if event.is_visible else "hidden"
+        flash(f'Event is now {status}', 'success')
+        return redirect(url_for('main.index'))
+    except Exception as e:
+        db.session.rollback()
+        flash('Error updating event visibility', 'danger')
+        return redirect(url_for('main.index'))
 
 @bp.route('/event/<int:event_id>/registrations')
 @login_required

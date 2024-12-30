@@ -73,7 +73,9 @@
 
     <div class="tab-pane fade" id="customer-view" role="tabpanel" aria-labelledby="customer-tab">
         <h2 class="h3 mb-4">Kommende Veranstaltungen</h2>
-        {{ customer_event_list(events) }}
+        {% with visible_events = events|selectattr('is_visible')|list %}
+            {{ customer_event_list(visible_events) }}
+        {% endwith %}
     </div>
 </div>
 
@@ -88,6 +90,8 @@
 </div>
 
 <h2 class="h3 mb-4">Kommende Veranstaltungen</h2>
-{{ customer_event_list(events) }}
+{% with visible_events = events|selectattr('is_visible')|list %}
+    {{ customer_event_list(visible_events) }}
+{% endwith %}
 {% endif %}
 {% endblock %}

@@ -8,7 +8,17 @@
                 <h5 class="mb-0">Veranstaltung bearbeiten</h5>
             </div>
             <div class="card-body">
-                <div id="error-container" style="display: none;"></div>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% with category, message = messages[-1] %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endwith %}
+                    {% endif %}
+                {% endwith %}
+                
                 <form method="POST" action="{{ url_for('main.edit_event', event_id=event.id) }}" novalidate>
                     <div class="mb-3">
                         <label for="title" class="form-label">Titel</label>
@@ -23,43 +33,38 @@
                     </div>
                     <div class="mb-3">
                         <label for="date" class="form-label">Datum und Uhrzeit</label>
-                        <input type="datetime-local" class="form-control" id="date" name="date" value="{{ event.date.strftime('%Y-%m-%dT%H:%M') }}" required>
+                        <input type="datetime-local" class="form-control" id="date" name="date" 
+                               value="{{ event.date.strftime('%Y-%m-%dT%H:%M') }}" required>
                         <div class="invalid-feedback">
-                            Das Datum muss in der Zukunft liegen.
+                            Bitte wählen Sie ein Datum und eine Uhrzeit.
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="capacity" class="form-label">Kapazität</label>
-                        <input type="number" class="form-control" id="capacity" name="capacity" value="{{ event.capacity }}" min="1" required>
+                        <input type="number" class="form-control" id="capacity" name="capacity" 
+                               value="{{ event.capacity }}" required>
                         <div class="invalid-feedback">
-                            Die Kapazität muss größer als 0 sein.
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="price" class="form-label">Preis (€)</label>
-                        <input type="number" class="form-control" id="price" name="price" value="{{ '%.2f'|format(event.price) }}" min="0" step="0.01" required>
-                        <div class="invalid-feedback">
-                            Der Preis darf nicht negativ sein.
+                            Bitte geben Sie eine gültige Kapazität ein.
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="room" class="form-label">Raum</label>
-                        <input type="text" class="form-control" id="room" name="room" value="{{ event.room }}" placeholder="z.B. Konferenzraum A">
+                        <input type="text" class="form-control" id="room" name="room" 
+                               value="{{ event.room }}">
                     </div>
                     <div class="mb-3">
                         <label for="address" class="form-label">Adresse</label>
-                        <input type="text" class="form-control" id="address" name="address" value="{{ event.address }}" placeholder="z.B. Hauptstraße 123, Stadt, Land">
+                        <input type="text" class="form-control" id="address" name="address" 
+                               value="{{ event.address }}">
                     </div>
                     <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="is_visible" name="is_visible" {% if event.is_visible %}checked{% endif %}>
-                            <label class="form-check-label" for="is_visible">Für Kunden sichtbar</label>
-                        </div>
-                        <div class="form-text">Wenn deaktiviert, ist die Veranstaltung nur in der Admin-Ansicht sichtbar.</div>
+                        <label for="price" class="form-label">Preis</label>
+                        <input type="number" step="0.01" class="form-control" id="price" name="price" 
+                               value="{{ event.price }}">
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
-                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Abbrechen</a>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary me-md-2">Abbrechen</a>
+                        <button type="submit" class="btn btn-primary">Speichern</button>
                     </div>
                 </form>
             </div>

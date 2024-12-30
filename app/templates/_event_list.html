@@ -29,22 +29,24 @@
                         <td class="d-none d-sm-table-cell">{{ event.capacity }}</td>
                         <td class="d-none d-sm-table-cell">{{ event.bookings }}</td>
                         <td>
-                            {% if event.bookings >= event.capacity %}
-                            <span class="badge bg-danger">Voll</span>
+                            {% if not event.is_visible %}
+                                <span class="badge bg-secondary">Versteckt</span>
+                            {% elif event.bookings >= event.capacity %}
+                                <span class="badge bg-danger">Ausgebucht</span>
                             {% else %}
-                            <span class="badge bg-success">Offen</span>
+                                <span class="badge bg-success">Offen</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if event.is_visible %}
                             <form action="{{ url_for('main.toggle_visibility', event_id=event.id) }}" method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Click to hide">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Verstecken">
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </form>
                             {% else %}
                             <form action="{{ url_for('main.toggle_visibility', event_id=event.id) }}" method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Click to show">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Sichtbar machen">
                                     <i class="bi bi-eye-slash"></i>
                                 </button>
                             </form>
