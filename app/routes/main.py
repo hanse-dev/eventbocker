@@ -88,28 +88,44 @@ def book_event(event_id):
 @bp.route('/event/<int:event_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_event(event_id):
-    event = Event.query.get_or_404(event_id)
+    # Use get() instead of get_or_404() for better performance
+    event = Event.query.get(event_id)
+    if not event:
+        flash('Event not found.', 'danger')
+        return redirect(url_for('main.index'))
     
     if request.method == 'POST':
         try:
-            event.title = request.form['title']
-            event.description = request.form['description']
-            date_str = request.form['date']
-            event.capacity = int(request.form.get('capacity', 10))
-            event.room = request.form.get('room')
-            event.address = request.form.get('address')
-            event.price = float(request.form.get('price', 0))
+            # Batch update attributes
+            form_data = {
+                'title': request.form['title'],
+                'description': request.form['description'],
+                'capacity': int(request.form.get('capacity', 10)),
+                'room': request.form.get('room'),
+                'address': request.form.get('address'),
+                'price': float(request.form.get('price', 0))
+            }
             
-            # Parse the date and make it timezone-aware
+            # Update all fields at once
+            for key, value in form_data.items():
+                setattr(event, key, value)
+            
+            # Handle date separately due to timezone
+            date_str = request.form['date']
             event.date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
             
+            # Use a single commit for all changes
             db.session.commit()
             
             flash('Event updated successfully!', 'success')
             return redirect(url_for('main.index'))
+            
         except ValueError as e:
+            db.session.rollback()
             flash(str(e), 'danger')
-            return render_template('edit_event.html', event=event)
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while updating the event.', 'danger')
     
     return render_template('edit_event.html', event=event)
 
