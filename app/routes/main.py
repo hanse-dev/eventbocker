@@ -28,7 +28,8 @@ def create_event():
         address = request.form.get('address')
         price = float(request.form.get('price', 0))
         
-        date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+        # Parse the date and make it timezone-aware
+        date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
         
         event = Event(
             title=title,
@@ -45,7 +46,7 @@ def create_event():
         flash('Event created successfully!', 'success')
         return redirect(url_for('main.index'))
     
-    default_date = datetime.now().strftime('%Y-%m-%dT%H:%M')
+    default_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M')
     return render_template('create_event.html', default_date=default_date)
 
 @bp.route('/event/<int:event_id>/book', methods=['GET', 'POST'])
