@@ -1,0 +1,80 @@
+{% macro admin_event_list(events) %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Titel</th>
+                <th class="d-none d-md-table-cell">Datum</th>
+                <th class="d-none d-sm-table-cell">Kapazität</th>
+                <th class="d-none d-sm-table-cell">Buchungen</th>
+                <th>Status</th>
+                <th class="d-none d-lg-table-cell">Ort</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody class="border-top-0">
+            {% for event in events %}
+            <tr>
+                <td>
+                    <div>{{ event.title }}</div>
+                    <div class="d-md-none"><small class="text-muted">{{ event.date.strftime('%Y-%m-%d %H:%M') }}</small></div>
+                </td>
+                <td class="d-none d-md-table-cell">{{ event.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td class="d-none d-sm-table-cell">{{ event.capacity }}</td>
+                <td class="d-none d-sm-table-cell">{{ event.bookings }}</td>
+                <td>
+                    {% if not event.is_visible %}
+                        <span class="badge bg-secondary">Versteckt</span>
+                    {% elif event.bookings >= event.capacity %}
+                        <span class="badge bg-danger">Ausgebucht</span>
+                    {% else %}
+                        <span class="badge bg-success">Offen</span>
+                    {% endif %}
+                </td>
+                <td class="d-none d-lg-table-cell">
+                    {% if event.room or event.address %}
+                    <small class="text-muted">
+                        {% if event.room %}{{ event.room }}{% endif %}
+                        {% if event.room and event.address %}, {% endif %}
+                        {% if event.address %}{{ event.address }}{% endif %}
+                    </small>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('main.edit_event', event_id=event.id) }}" 
+                           class="btn btn-sm btn-outline-secondary px-2"
+                           title="Bearbeiten">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="{{ url_for('main.copy_event', event_id=event.id) }}" method="POST">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary px-2" title="Kopieren">
+                                <i class="bi bi-files"></i>
+                            </button>
+                        </form>
+                        <a href="{{ url_for('main.view_registrations', event_id=event.id) }}" 
+                           class="btn btn-sm btn-outline-secondary px-2"
+                           title="Teilnehmer">
+                            <i class="bi bi-people"></i>
+                        </a>
+                        <form action="{{ url_for('main.toggle_visibility', event_id=event.id) }}" method="POST">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary px-2" 
+                                    title="{% if event.is_visible %}Verstecken{% else %}Zeigen{% endif %}">
+                                <i class="bi bi-{% if event.is_visible %}eye-slash{% else %}eye{% endif %}"></i>
+                            </button>
+                        </form>
+                        <form action="{{ url_for('main.delete_event', event_id=event.id) }}" 
+                              method="POST" 
+                              onsubmit="return confirm('Sind Sie sicher, dass Sie diese Veranstaltung löschen möchten?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger px-2" title="Löschen">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}

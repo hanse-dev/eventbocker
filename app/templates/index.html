@@ -1,81 +1,41 @@
 {% extends "base.html" %}
-{% from "_event_list.html" import admin_event_list, customer_event_list %}
+{% from "_admin_event_list.html" import admin_event_list %}
+{% from "_customer_event_list.html" import customer_event_list %}
 
 {% block content %}
-{% if current_user.is_authenticated %}
-<div class="row g-3 mb-4 align-items-center">
-    <div class="col-12 col-sm-6">
-        <h1 class="h2 mb-0">Veranstaltungsübersicht</h1>
-    </div>
-    <div class="col-12 col-sm-6 d-flex justify-content-start justify-content-sm-end">
-        <a href="{{ url_for('main.create_event') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-plus-circle"></i> Neue Veranstaltung erstellen
-        </a>
-    </div>
-</div>
-
-<div class="nav nav-pills d-flex flex-nowrap overflow-auto mb-4 gap-3" role="tablist">
-    <button class="nav-link active" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-view" type="button" role="tab" aria-controls="admin-view" aria-selected="true">
-        <i class="bi bi-gear"></i> Admin-Ansicht
-    </button>
-    <button class="nav-link" id="customer-tab" data-bs-toggle="tab" data-bs-target="#customer-view" type="button" role="tab" aria-controls="customer-view" aria-selected="false">
-        <i class="bi bi-person"></i> Kunden-Ansicht
-    </button>
-</div>
-
-<div class="tab-content" id="viewTabsContent">
-    <div class="tab-pane fade show active" id="admin-view" role="tabpanel" aria-labelledby="admin-tab">
-        <div class="row g-3 mb-4">
-            <div class="col-12 col-sm-6 col-md-4">
-                <div class="card h-100 bg-light">
-                    <div class="card-body">
-                        <h5 class="card-title h6">Gesamtanzahl Veranstaltungen</h5>
-                        <p class="card-text h2 mb-0">{{ events|length }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <div class="card h-100 bg-light">
-                    <div class="card-body">
-                        <h5 class="card-title h6">Verfügbare Veranstaltungen</h5>
-                        <p class="card-text h2 mb-0">
-                            {% set available = namespace(count=0) %}
-                            {% for event in events %}
-                                {% if event.bookings < event.capacity %}
-                                    {% set available.count = available.count + 1 %}
-                                {% endif %}
-                            {% endfor %}
-                            {{ available.count }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <div class="card h-100 bg-light">
-                    <div class="card-body">
-                        <h5 class="card-title h6">Ausgebucht</h5>
-                        <p class="card-text h2 mb-0">
-                            {% set booked = namespace(count=0) %}
-                            {% for event in events %}
-                                {% if event.bookings >= event.capacity %}
-                                    {% set booked.count = booked.count + 1 %}
-                                {% endif %}
-                            {% endfor %}
-                            {{ booked.count }}
-                        </p>
-                    </div>
-                </div>
-            </div>
+{% if current_user.is_authenticated and current_user.is_admin %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">Event Management</h1>
+            <a href="{{ url_for('main.create_event') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Neue Veranstaltung
+            </a>
         </div>
+    </div>
+</div>
 
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-view" type="button" role="tab" aria-controls="admin-view" aria-selected="true">
+            Admin Ansicht
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="customer-tab" data-bs-toggle="tab" data-bs-target="#customer-view" type="button" role="tab" aria-controls="customer-view" aria-selected="false">
+            Kunden Ansicht
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="admin-view" role="tabpanel" aria-labelledby="admin-tab">
         {{ admin_event_list(events) }}
     </div>
 
     <div class="tab-pane fade" id="customer-view" role="tabpanel" aria-labelledby="customer-tab">
         <h2 class="h3 mb-4">Kommende Veranstaltungen</h2>
-        {% with visible_events = events|selectattr('is_visible')|list %}
-            {{ customer_event_list(visible_events) }}
-        {% endwith %}
+        {{ customer_event_list(events) }}
     </div>
 </div>
 
@@ -90,8 +50,6 @@
 </div>
 
 <h2 class="h3 mb-4">Kommende Veranstaltungen</h2>
-{% with visible_events = events|selectattr('is_visible')|list %}
-    {{ customer_event_list(visible_events) }}
-{% endwith %}
+{{ customer_event_list(events) }}
 {% endif %}
 {% endblock %}

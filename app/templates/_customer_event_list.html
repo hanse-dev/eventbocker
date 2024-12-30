@@ -1,0 +1,52 @@
+{% macro customer_event_list(events) %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for event in events %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ event.title }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ event.date.strftime('%d.%m.%Y %H:%M') }}</h6>
+                {% if event.description %}
+                <p class="card-text">{{ event.description }}</p>
+                {% endif %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        {% if event.bookings >= event.capacity %}
+                            <span class="badge bg-danger">Ausgebucht</span>
+                        {% else %}
+                            <span class="badge bg-success">{{ event.capacity - event.bookings }} Plätze frei</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <small class="text-muted">{{ event.bookings }}/{{ event.capacity }} belegt</small>
+                    </div>
+                </div>
+                {% if event.room or event.address %}
+                <p class="card-text">
+                    <small class="text-muted">
+                        {% if event.room %}{{ event.room }}{% endif %}
+                        {% if event.room and event.address %}, {% endif %}
+                        {% if event.address %}{{ event.address }}{% endif %}
+                    </small>
+                </p>
+                {% endif %}
+                {% if event.price > 0 %}
+                <p class="card-text">
+                    <small class="text-muted">Preis: {{ "%.2f"|format(event.price) }} €</small>
+                </p>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="d-grid">
+                    {% if event.bookings >= event.capacity %}
+                        <button class="btn btn-secondary" disabled>Ausgebucht</button>
+                    {% else %}
+                        <a href="{{ url_for('main.book_event', event_id=event.id) }}" class="btn btn-primary w-100">Jetzt buchen</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}
