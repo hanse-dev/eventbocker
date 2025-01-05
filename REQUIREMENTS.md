@@ -74,3 +74,14 @@
 - ✅ Easy backup capability
 - ✅ Troubleshooting guides
 - ✅ Update procedures
+
+# Additional Requirements
+•⁠  ⁠email bei Anmeldung
+•⁠  ⁠⁠User Accounts
+•⁠  ⁠⁠auf der Übersicht sehen, wie viele Plätze vergeben sind
+•⁠  ⁠⁠ein Export der teilnehmenden, damit man die nicht mit der Hand abschreiben muss
+•⁠  ⁠⁠Anpassungen am Design
+•⁠  ⁠Pay Button/Link zu paypal?
+•⁠  ⁠TN Anzahl 6 -ab wann Kurs findet statt steht.
+•⁠  ⁠Automat. Reminder-mail.
+•⁠  ⁠(Downloads auf Website)
