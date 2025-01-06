@@ -78,17 +78,12 @@
 ## Future Requirements
 
 ### Event Organization
-- [ ] Event categorization system
-- [ ] Tagging system for events
 - [ ] Advanced search and filter functionality
 - [ ] Event series management
+- [ ] Event location management
 
 ### Booking System Enhancements
 - [ ] Waitlist functionality
-- [ ] Early bird pricing system
-- [ ] Group booking support
-- [ ] Flexible cancellation policies
-- [ ] Automated refund processing
 
 ### User Experience Improvements
 - [ ] Email notification system
@@ -98,7 +93,6 @@
 - [ ] Calendar integration
   - [ ] iCal export
   - [ ] Google Calendar integration
-- [ ] Multi-language support
 - [ ] Enhanced mobile responsiveness
 
 ### Payment System
