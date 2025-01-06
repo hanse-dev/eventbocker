@@ -164,6 +164,33 @@ For first-time setup or resetting the database:
 docker-compose -f docker-compose.dev.yml exec web python init_db.py
 ```
 
+## Email Configuration
+
+The system supports sending emails for event notifications and confirmations. To set up email functionality:
+
+1. Configure your email settings in the `.env` file:
+   ```bash
+   MAIL_SERVER=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USE_TLS=True
+   MAIL_USERNAME=your-email@gmail.com
+   MAIL_PASSWORD=your-app-password
+   MAIL_DEFAULT_SENDER=your-email@gmail.com
+   ```
+
+2. Test email configuration:
+   ```bash
+   # Using Docker
+   docker-compose exec web python -c "from app.extensions import mail; mail.send_message(subject='Test', recipients=['test@example.com'], body='Test email')"
+
+   # Local development
+   flask shell
+   >>> from app.extensions import mail
+   >>> mail.send_message(subject='Test', recipients=['test@example.com'], body='Test email')
+   ```
+
+Note: Make sure to never commit your actual email credentials to version control. Always use environment variables for sensitive information.
+
 ## Development
 
 - The application uses SQLite for data storage
@@ -188,4 +215,4 @@ python -m pytest
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
