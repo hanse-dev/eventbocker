@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, current_app
 from flask_login import current_user, login_required
 from ..models import Event, Booking
 from ..utils.email import send_event_registration_confirmation, send_admin_registration_notification
-from .. import db
+from ..extensions import db
 
 bp = Blueprint('bookings', __name__, url_prefix='/bookings')
 

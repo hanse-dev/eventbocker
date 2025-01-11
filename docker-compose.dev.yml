@@ -14,28 +14,29 @@ services:
         - ENVIRONMENT=development
     ports:
       # Main application port
-      - "${PORT:-5001}:5001"
+      - "5001:5001"
       # Debug port for remote debugging
       - "5678:5678"  # For debugger
     environment:
       # Flask configuration
-      - FLASK_APP=app
+      - FLASK_APP=app.app
       - FLASK_ENV=development
       - FLASK_DEBUG=1
       # Python configuration
       - PYTHONDONTWRITEBYTECODE=1  # Don't create .pyc files
       - PYTHONUNBUFFERED=1         # Unbuffered output for logging
       # Application configuration
-      - SECRET_KEY=${SECRET_KEY:-default-dev-key-change-in-production}
-      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/instance/data.db}
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - SECRET_KEY=dev
+      - DATABASE_URL=sqlite:////app/instance/data.db
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - ADMIN_EMAIL=admin@example.com
       - PORT=5001
     volumes:
       # Mount application code for hot reloading
-      - .:/app:rw
+      - .:/app
       # Mount instance directory for persistent data
-      - ./instance:/app/instance:rw
+      - ./instance:/app/instance
       # Cache pip packages between container rebuilds
       - ~/.cache/pip:/home/appuser/.cache/pip  # Cache pip packages
     # Use host user's UID/GID to avoid permission issues

@@ -5,7 +5,7 @@
 # ===================================================================
 # Stage 1: Builder stage for compiling and installing dependencies
 # ===================================================================
-FROM python:3.12-slim as builder
+FROM python:3.11-slim as builder
 
 # Prevent Python from writing pyc files and enable unbuffered output
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -15,25 +15,22 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /build
 
 # Install system-level build dependencies
-# gcc: Required for compiling some Python packages
-# python3-dev: Required for building Python extensions
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         gcc \
         python3-dev \
+        libpq-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
 # Install Python dependencies into a separate directory
-# This allows us to copy only the installed packages to the final image
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt \
-    && pip install --no-cache-dir --prefix=/install flask-migrate
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ===================================================================
 # Stage 2: Final stage with minimal runtime dependencies
 # ===================================================================
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 # Build argument to determine environment (production/development)
 ARG ENVIRONMENT=production
@@ -43,34 +40,26 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     FLASK_APP=app \
     FLASK_ENV=${ENVIRONMENT} \
-    PORT=5001
+    PORT=5001 \
+    PATH="/home/appuser/.local/bin:${PATH}"
 
 # Set the working directory for the application
 WORKDIR /app
 
 # Install minimal runtime dependencies
-# curl: Required for healthcheck and general HTTP requests
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
+        bash \
+        libpq5 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
 # Copy installed Python packages from builder stage
 COPY --from=builder /install /usr/local
 
-# Install environment-specific packages
-# Production: gunicorn for production-grade WSGI server
-# Development: watchdog for file system monitoring
-RUN if [ "$ENVIRONMENT" = "production" ] ; then \
-        pip install --no-cache-dir gunicorn ; \
-    else \
-        pip install --no-cache-dir watchdog[watchmedo] ; \
-    fi
-
 # Create a non-root user for security
-# Set up proper permissions for application directories
-RUN groupadd -r appuser && useradd -r -g appuser appuser \
+RUN groupadd -r appuser && useradd -r -g appuser -m appuser \
     && mkdir -p /app/instance \
     && chown -R appuser:appuser /app \
     && chmod -R 775 /app/instance

@@ -1,6 +1,6 @@
-#!/bin/sh
-# Enable exit on error
-set -e
+#!/bin/bash
+# Enable strict mode
+set -euo pipefail
 
 # =================================================================
 # Utility Functions
@@ -12,77 +12,50 @@ log() {
 }
 
 # Error handler function for better debugging
-handle_error() {
-    log "Error occurred in script at line: ${1}"
-    exit 1
+error_handler() {
+    local line_no=$1
+    local error_code=$2
+    log "Error (code: $error_code) occurred in script at line: $line_no"
+    exit $error_code
 }
 
-# Set up error handling trap
-trap 'handle_error ${LINENO}' ERR
-
-# =================================================================
-# Database Connection Check
-# =================================================================
-
-# Wait for database to be ready (skip for SQLite)
-if [ -n "$DATABASE_URL" ] && [ "$DATABASE_URL" != "sqlite:////app/instance/data.db" ]; then
-    log "Waiting for database to be ready..."
-    max_retries=30
-    counter=0
-    # Try to connect to database with increasing delay
-    until flask db current > /dev/null 2>&1 || [ $counter -eq $max_retries ]; do
-        counter=$((counter+1))
-        log "Attempt $counter/$max_retries: waiting for database..."
-        sleep 1
-    done
-    if [ $counter -eq $max_retries ]; then
-        log "Failed to connect to database after $max_retries attempts"
-        exit 1
-    fi
-fi
+# Set up error handling
+trap 'error_handler ${LINENO} $?' ERR
 
 # =================================================================
 # Database Migration Management
 # =================================================================
 
-# Initialize database migrations if not already done
-if [ ! -d "migrations" ]; then
-    log "Initializing migrations directory..."
-    flask db init
+export FLASK_APP=app.app
+cd /app
+
+log "Setting up database..."
+
+# Create instance directory if it doesn't exist
+mkdir -p /app/instance
+
+# Clean up any existing migrations
+if [ -d "/app/migrations" ]; then
+    log "Removing existing migrations directory..."
+    rm -rf /app/migrations
 fi
 
-# Apply any pending database migrations
-log "Running database migrations..."
-flask db migrate -m "Auto-migration" || log "No new migrations needed"
+# Initialize migrations
+log "Initializing migrations..."
+flask db init
+
+# Create initial migration
+log "Creating initial migration..."
+flask db migrate -m "initial"
+
+# Apply migrations
+log "Applying migrations..."
 flask db upgrade
 
 # =================================================================
-# Application Server Startup
+# Application Startup
 # =================================================================
 
-# Start the appropriate server based on environment
-if [ "$FLASK_ENV" = "production" ]; then
-    log "Starting Gunicorn server in production mode..."
-    # Start Gunicorn with production settings
-    exec gunicorn --bind 0.0.0.0:${PORT:-5001} \
-        --workers 4 \                    # Number of worker processes
-        --threads 2 \                    # Number of threads per worker
-        --timeout 60 \                   # Worker timeout in seconds
-        --access-logfile - \             # Send access logs to stdout
-        --error-logfile - \              # Send error logs to stdout
-        --log-level warning \            # Set log level
-        --capture-output \               # Capture stdout/stderr from workers
-        --enable-stdio-inheritance \      # Enable stdio inheritance for better logging
-        'app:create_app()'
-else
-    log "Starting Flask development server..."
-    if [ "$FLASK_DEBUG" = "1" ]; then
-        # Start with remote debugging enabled
-        log "Debug mode enabled, starting with debugger..."
-        exec python -m debugpy --listen 0.0.0.0:5678 --wait-for-client \
-            -m flask run --host=0.0.0.0 --port=${PORT:-5001} --debug --reload
-    else
-        # Start regular development server
-        exec python -m flask run --host=0.0.0.0 --port=${PORT:-5001} --debug --reload
-    fi
-fi
+# Start Gunicorn
+log "Starting Gunicorn server..."
+exec gunicorn -w 4 -b 0.0.0.0:5001 --access-logfile - --error-logfile - --log-level info "app.app:create_app()"
