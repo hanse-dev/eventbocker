@@ -1,8 +1,10 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
 from ..models.models import Event, Booking, db
 from datetime import datetime, timezone
 from sqlalchemy import text
+from ..utils.email import send_event_registration_confirmation
+import traceback
 
 bp = Blueprint('main', __name__)
 
@@ -48,11 +50,15 @@ def create_event():
             flash('Event created successfully!', 'success')
             return redirect(url_for('main.index'))
         except ValueError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error in create_event: {str(e)}\n{traceback.format_exc()}")
             flash(str(e), 'danger')
             return render_template('create_event.html', 
                                 default_date=date_str,
                                 form_data=request.form)
         except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error in create_event: {str(e)}\n{traceback.format_exc()}")
             flash('An error occurred while creating the event.', 'danger')
             return render_template('create_event.html', 
                                 default_date=date_str,
@@ -75,13 +81,30 @@ def book_event(event_id):
         phone = request.form['phone']
         
         booking = Booking(event_id=event_id, name=name, email=email, phone=phone)
-        event.bookings += 1
         
-        db.session.add(booking)
-        db.session.commit()
-        
-        flash('Booking successful!', 'success')
-        return redirect(url_for('main.book_event', event_id=event_id))
+        try:
+            # Start transaction
+            db.session.begin_nested()  # Create a savepoint
+            
+            # Add booking and increment counter
+            db.session.add(booking)
+            event.bookings += 1
+            
+            # Try to send email first before committing
+            send_event_registration_confirmation(email, event)
+            
+            # If email sent successfully, commit the transaction
+            db.session.commit()
+            
+            flash('Booking successful! A confirmation email has been sent to your email address.', 'success')
+            return redirect(url_for('main.book_event', event_id=event_id))
+            
+        except Exception as e:
+            # Roll back to the savepoint
+            db.session.rollback()
+            current_app.logger.error(f"Error in book_event: {str(e)}\n{traceback.format_exc()}")
+            flash('An error occurred while processing your booking. Please try again.', 'error')
+            return redirect(url_for('main.book_event', event_id=event_id))
     
     return render_template('book_event.html', event=event)
 
@@ -122,9 +145,11 @@ def edit_event(event_id):
             
         except ValueError as e:
             db.session.rollback()
+            current_app.logger.error(f"Error in edit_event: {str(e)}\n{traceback.format_exc()}")
             flash(str(e), 'danger')
         except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f"Error in edit_event: {str(e)}\n{traceback.format_exc()}")
             flash('An error occurred while updating the event.', 'danger')
     
     return render_template('edit_event.html', event=event)
@@ -159,7 +184,14 @@ def copy_event(event_id):
         flash('Event copied successfully!', 'success')
         return redirect(url_for('main.index'))
     except ValueError as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in copy_event: {str(e)}\n{traceback.format_exc()}")
         flash(str(e), 'danger')
+        return redirect(url_for('main.index'))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in copy_event: {str(e)}\n{traceback.format_exc()}")
+        flash('An error occurred while copying the event.', 'danger')
         return redirect(url_for('main.index'))
 
 @bp.route('/event/<int:event_id>/toggle-visibility', methods=['POST'])
@@ -174,6 +206,7 @@ def toggle_visibility(event_id):
         return redirect(url_for('main.index'))
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Error in toggle_visibility: {str(e)}\n{traceback.format_exc()}")
         flash('Error updating event visibility', 'danger')
         return redirect(url_for('main.index'))
 
@@ -194,26 +227,40 @@ def delete_booking(booking_id):
     event.bookings = max(0, event.bookings - 1)
     
     # Delete the booking
-    db.session.delete(booking)
-    db.session.commit()
-    
-    flash('Anmeldung erfolgreich gelöscht.', 'success')
-    return redirect(url_for('main.view_registrations', event_id=booking.event_id))
+    try:
+        db.session.delete(booking)
+        db.session.commit()
+        flash('Anmeldung erfolgreich gelöscht.', 'success')
+        return redirect(url_for('main.view_registrations', event_id=booking.event_id))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in delete_booking: {str(e)}\n{traceback.format_exc()}")
+        flash('An error occurred while deleting the booking.', 'error')
+        return redirect(url_for('main.view_registrations', event_id=booking.event_id))
 
 @bp.route('/event/<int:event_id>/delete', methods=['POST'])
 @login_required
 def delete_event(event_id):
+    if not current_user.is_admin:
+        flash('You do not have permission to delete events.', 'error')
+        return redirect(url_for('main.index'))
+    
     event = Event.query.get_or_404(event_id)
-    
-    # Delete associated bookings first
-    Booking.query.filter_by(event_id=event_id).delete()
-    
-    # Delete the event
-    db.session.delete(event)
-    db.session.commit()
-    
-    flash('Event successfully deleted.', 'success')
-    return redirect(url_for('main.index'))
+    try:
+        # Delete associated bookings first
+        Booking.query.filter_by(event_id=event_id).delete()
+        
+        # Delete the event
+        db.session.delete(event)
+        db.session.commit()
+        
+        flash('Event successfully deleted.', 'success')
+        return redirect(url_for('main.index'))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in delete_event: {str(e)}\n{traceback.format_exc()}")
+        flash('An error occurred while deleting the event.', 'error')
+        return redirect(url_for('main.index'))
 
 @bp.route('/health')
 def health_check():
@@ -227,6 +274,7 @@ def health_check():
             'timestamp': datetime.now(timezone.utc).isoformat()
         }), 200
     except Exception as e:
+        current_app.logger.error(f"Error in health_check: {str(e)}\n{traceback.format_exc()}")
         return jsonify({
             'status': 'unhealthy',
             'database': 'disconnected',

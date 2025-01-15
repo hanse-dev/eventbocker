@@ -58,8 +58,9 @@ Thank you for registering for {event.title}!
 
 Event Details:
 - Date: {event.date.strftime('%B %d, %Y')}
-- Time: {event.time.strftime('%I:%M %p')}
-- Location: {event.location}
+- Time: {event.date.strftime('%I:%M %p')}
+- Location: {event.room or 'TBA'}
+- Address: {event.address or 'TBA'}
 
 We look forward to seeing you there!
 
@@ -72,8 +73,9 @@ The Event Team
     <h3>Event Details:</h3>
     <ul>
         <li><strong>Date:</strong> {event.date.strftime('%B %d, %Y')}</li>
-        <li><strong>Time:</strong> {event.time.strftime('%I:%M %p')}</li>
-        <li><strong>Location:</strong> {event.location}</li>
+        <li><strong>Time:</strong> {event.date.strftime('%I:%M %p')}</li>
+        <li><strong>Location:</strong> {event.room or 'TBA'}</li>
+        <li><strong>Address:</strong> {event.address or 'TBA'}</li>
     </ul>
     
     <p>We look forward to seeing you there!</p>
