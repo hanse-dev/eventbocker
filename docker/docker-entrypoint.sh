@@ -23,32 +23,47 @@ error_handler() {
 trap 'error_handler ${LINENO} $?' ERR
 
 # =================================================================
-# Database Migration Management
+# Environment Setup
 # =================================================================
 
+# Set default environment if not specified
+FLASK_ENV=${FLASK_ENV:-production}
 export FLASK_APP=app.app
+
 cd /app
+
+log "Running in ${FLASK_ENV} environment"
+
+# =================================================================
+# Database Migration Management
+# =================================================================
 
 log "Setting up database..."
 
 # Create instance directory if it doesn't exist
 mkdir -p /app/instance
 
-# Clean up any existing migrations
-if [ -d "/app/migrations" ]; then
-    log "Removing existing migrations directory..."
-    rm -rf /app/migrations
+# Initialize migrations if they don't exist
+if [ ! -d "/app/migrations" ]; then
+    log "Initializing migrations..."
+    flask db init
 fi
 
-# Initialize migrations
-log "Initializing migrations..."
-flask db init
+# Check for any pending changes and create a new migration if needed
+if flask db current > /dev/null 2>&1; then
+    log "Checking for model changes..."
+    if flask db check > /dev/null 2>&1; then
+        log "No model changes detected"
+    else
+        log "Model changes detected, creating new migration..."
+        flask db migrate -m "auto migration $(date +%Y%m%d_%H%M%S)"
+    fi
+else
+    log "No existing migrations found, creating initial migration..."
+    flask db migrate -m "initial"
+fi
 
-# Create initial migration
-log "Creating initial migration..."
-flask db migrate -m "initial"
-
-# Apply migrations
+# Apply any pending migrations
 log "Applying migrations..."
 flask db upgrade
 
@@ -56,6 +71,12 @@ flask db upgrade
 # Application Startup
 # =================================================================
 
-# Start Gunicorn
-log "Starting Gunicorn server..."
-exec gunicorn -w 4 -b 0.0.0.0:5001 --access-logfile - --error-logfile - --log-level info "app.app:create_app()"
+if [ "${FLASK_ENV}" = "development" ]; then
+    # Start Flask development server with debugger
+    log "Starting Flask development server..."
+    exec python -m debugpy --listen 0.0.0.0:5678 -m flask run --host=0.0.0.0 --port=5001
+else
+    # Start Gunicorn for production
+    log "Starting Gunicorn server..."
+    exec gunicorn -w 4 -b 0.0.0.0:5001 --access-logfile - --error-logfile - --log-level info "app.app:create_app()"
+fi

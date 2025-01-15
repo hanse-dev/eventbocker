@@ -1,85 +1,34 @@
-# ===================================================================
-# Multi-stage build for Flask application
-# ===================================================================
+# Simplified Dockerfile for Flask application
 
-# ===================================================================
-# Stage 1: Builder stage for compiling and installing dependencies
-# ===================================================================
-FROM python:3.11-slim as builder
+FROM python:3.12-slim
 
-# Prevent Python from writing pyc files and enable unbuffered output
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    FLASK_APP=app \
+    PORT=5001
 
-# Set the working directory for the build stage
-WORKDIR /build
+WORKDIR /app
 
-# Install system-level build dependencies
+# Install system dependencies and Python packages
+COPY requirements.txt .
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         gcc \
         python3-dev \
         libpq-dev \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apt-get remove -y gcc python3-dev \
+    && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Install Python dependencies into a separate directory
-COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# Copy application code
+COPY . .
 
-# ===================================================================
-# Stage 2: Final stage with minimal runtime dependencies
-# ===================================================================
-FROM python:3.11-slim
+# Make the entrypoint script executable
+RUN chmod +x /app/docker/docker-entrypoint.sh
 
-# Build argument to determine environment (production/development)
-ARG ENVIRONMENT=production
+EXPOSE 5001
 
-# Set environment variables for Flask and Python
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    FLASK_APP=app \
-    FLASK_ENV=${ENVIRONMENT} \
-    PORT=5001 \
-    PATH="/home/appuser/.local/bin:${PATH}"
-
-# Set the working directory for the application
-WORKDIR /app
-
-# Install minimal runtime dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        curl \
-        bash \
-        libpq5 \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-# Copy installed Python packages from builder stage
-COPY --from=builder /install /usr/local
-
-# Create a non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser -m appuser \
-    && mkdir -p /app/instance \
-    && chown -R appuser:appuser /app \
-    && chmod -R 775 /app/instance
-
-# Copy application code with proper ownership
-COPY --chown=appuser:appuser . .
-
-# Set up entrypoint script
-COPY --chown=appuser:appuser docker/docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Switch to non-root user for security
-USER appuser
-
-# Expose the application port
-EXPOSE ${PORT}
-
-# Configure container health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
-
-# Set the entrypoint script
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["/app/docker/docker-entrypoint.sh"]

@@ -1,23 +1,13 @@
-version: '3.8'
-
 services:
   web:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      args:
-        - ENVIRONMENT=production
     ports:
       - "5001:5001"
     environment:
       - FLASK_APP=app.app
-      - FLASK_ENV=production
-      - FLASK_DEBUG=0
-      - SECRET_KEY=change-this-in-production
       - DATABASE_URL=sqlite:////app/instance/data.db
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=admin
-      - ADMIN_EMAIL=admin@example.com
       - PORT=5001
     volumes:
       - ./instance:/app/instance
