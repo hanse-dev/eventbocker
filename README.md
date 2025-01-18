@@ -14,10 +14,8 @@ A Flask-based event management system for creating and managing events.
 │   ├── config.py     # Configuration
 │   └── extensions.py # Flask extensions
 ├── docker/           # Docker configuration
-│   ├── Dockerfile          # Production build
-│   ├── Dockerfile.dev      # Development build
-│   ├── docker-entrypoint.sh
-│   └── docker-entrypoint.dev.sh
+│   ├── Dockerfile    # Multi-stage build for both dev and prod
+│   └── docker-entrypoint.sh  # Unified entrypoint script
 ├── instance/         # SQLite database (gitignored)
 ├── requirements.txt  # Python dependencies
 ├── init_db.py       # Database initialization script
@@ -37,24 +35,132 @@ A Flask-based event management system for creating and managing events.
 
 2. Build and start the containers:
    ```bash
-   # For development
+   # For development (includes hot-reload and debugging)
    docker-compose -f docker-compose.dev.yml up --build
 
    # For production
    docker-compose up --build
    ```
 
-3. Initialize the database (first time only):
-   ```bash
-   docker-compose exec web python init_db.py
+The application will be available at:
+- Development: http://localhost:5001 (with hot-reload and debugging on port 5678)
+- Production: http://localhost:5001 (with Gunicorn server)
+
+### Docker Development Features
+
+Our Docker setup includes several developer-friendly features:
+
+1. **Hot Reload**: Code changes are automatically detected and reloaded
+2. **Remote Debugging**: Available on port 5678 (use VS Code or PyCharm)
+3. **Pip Cache**: Dependencies are cached between builds
+4. **Database Migrations**: Automatically handled on startup
+5. **Health Checks**: Built-in container health monitoring
+6. **Security**: Runs as non-root user with proper permissions
+7. **Logging**: Structured logging with rotation
+
+### Docker Commands
+
+#### Development Environment
+
+```bash
+# Start development environment
+docker-compose -f docker-compose.dev.yml up --build
+
+# Start in debug mode (enables remote debugger)
+FLASK_DEBUG=1 docker-compose -f docker-compose.dev.yml up --build
+
+# View logs with timestamps
+docker-compose -f docker-compose.dev.yml logs -f --timestamps
+
+# Rebuild without cache (if dependencies changed)
+docker-compose -f docker-compose.dev.yml build --no-cache
+
+# Stop and remove containers
+docker-compose -f docker-compose.dev.yml down
+
+# Restart services
+docker-compose -f docker-compose.dev.yml restart
+```
+
+#### Production Environment
+
+```bash
+# Start production environment
+docker-compose up --build
+
+# View logs with timestamps
+docker-compose logs -f --timestamps
+
+# Stop and remove containers
+docker-compose down
+```
+
+### Database Management
+
+Database migrations are automatically handled by the entrypoint script, but you can also run them manually:
+
+```bash
+# Create a new migration
+docker-compose -f docker-compose.dev.yml exec web flask db migrate -m "Description"
+
+# Apply migrations manually
+docker-compose -f docker-compose.dev.yml exec web flask db upgrade
+
+# Rollback migrations
+docker-compose -f docker-compose.dev.yml exec web flask db downgrade
+```
+
+### Debugging
+
+1. **VS Code Configuration**:
+   Add this to your `launch.json`:
+   ```json
+   {
+     "name": "Python: Remote Attach",
+     "type": "python",
+     "request": "attach",
+     "connect": {
+       "host": "localhost",
+       "port": 5678
+     },
+     "pathMappings": [
+       {
+         "localRoot": "${workspaceFolder}",
+         "remoteRoot": "/app"
+       }
+     ]
+   }
    ```
 
-### Local Development
+2. **Start with Debugger**:
+   ```bash
+   FLASK_DEBUG=1 docker-compose -f docker-compose.dev.yml up --build
+   ```
+
+3. **Attach Debugger**: 
+   - VS Code: Run the "Python: Remote Attach" configuration
+   - PyCharm: Create a Python Debug Server configuration (port 5678)
+
+### Health Checks
+
+The Docker setup includes health checks that monitor:
+- Web server availability
+- Database connectivity
+- Required services status
+
+View health status:
+```bash
+docker-compose ps
+# or
+docker ps
+```
+
+### Local Development (Without Docker)
 
 1. Create and activate a virtual environment:
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   .venv\Scripts\activate  # On Windows
    ```
 
 2. Install dependencies:
@@ -77,115 +183,43 @@ A Flask-based event management system for creating and managing events.
    flask run
    ```
 
-## Docker Commands
-
-### Development Environment
-
-```bash
-# Start development environment (with auto-reload)
-docker-compose -f docker-compose.dev.yml up --build
-
-# Rebuild without cache (if dependencies changed)
-docker-compose -f docker-compose.dev.yml build --no-cache
-docker-compose -f docker-compose.dev.yml up
-
-# Stop and remove containers
-docker-compose -f docker-compose.dev.yml down
-
-# View logs
-docker-compose -f docker-compose.dev.yml logs -f
-
-# Restart services
-docker-compose -f docker-compose.dev.yml restart
-```
-
-### Production Environment
-
-```bash
-# Start production environment
-docker-compose up --build
-
-# Rebuild without cache
-docker-compose build --no-cache
-docker-compose up
-
-# Stop and remove containers
-docker-compose down
-
-# View logs
-docker-compose logs -f
-
-# Restart services
-docker-compose restart
-```
-
-### Database Management in Docker
-
-```bash
-# Initialize database (first time or reset)
-docker-compose exec web python init_db.py
-
-# Access database shell
-docker-compose exec web flask shell
-```
-
-## Database Management
-
-### Migrations
-
-The project uses Flask-Migrate (Alembic) for database migrations. Here are the common migration commands:
-
-1. Initialize migrations (first time only):
-   ```bash
-   docker-compose -f docker-compose.dev.yml exec web flask db init
-   ```
-
-2. Create a new migration after model changes:
-   ```bash
-   docker-compose -f docker-compose.dev.yml exec web flask db migrate -m "Description of changes"
-   ```
-
-3. Apply pending migrations:
-   ```bash
-   docker-compose -f docker-compose.dev.yml exec web flask db upgrade
-   ```
-
-4. Rollback migrations:
-   ```bash
-   docker-compose -f docker-compose.dev.yml exec web flask db downgrade
-   ```
-
-Note: Migrations are automatically applied when the container starts up.
-
-### Manual Database Initialization
-
-For first-time setup or resetting the database:
-```bash
-docker-compose -f docker-compose.dev.yml exec web python init_db.py
-```
-
-## Development
+## Development Guidelines
 
 - The application uses SQLite for data storage
 - Flask-Login handles user authentication
 - Templates use Bootstrap for styling
 - Configuration is managed through environment variables
+- All code changes are automatically reloaded in development
+- Database migrations are automatically applied on startup
+- Logs are available through Docker's logging system
 
-## Testing
+## Security Notes
 
-Run the tests with:
-```bash
-python -m pytest
-```
+1. The Docker setup includes several security features:
+   - Non-root user execution
+   - No privilege escalation
+   - Minimal runtime dependencies
+   - Proper file permissions
+   - Environment variable management
 
-## Contributing
+2. Never commit sensitive information:
+   - Use `.env` files for local development
+   - Use secure secrets management in production
+   - Keep API keys and credentials private
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+## Troubleshooting
 
-## License
+1. **Container won't start**:
+   - Check logs: `docker-compose -f docker-compose.dev.yml logs -f web`
+   - Verify environment variables: `docker-compose -f docker-compose.dev.yml config`
+   - Check port conflicts: `netstat -ano | findstr 5001`
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+2. **Hot reload not working**:
+   - Ensure volumes are properly mounted
+   - Check file permissions
+   - Verify FLASK_DEBUG=1 is set
+
+3. **Database issues**:
+   - Check instance folder permissions
+   - Verify DATABASE_URL in .env
+   - Review migration logs

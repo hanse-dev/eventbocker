@@ -1,8 +1,10 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
 from ..models.models import Event, Booking, db
 from datetime import datetime, timezone
 from sqlalchemy import text
+from ..utils.email import send_event_registration_confirmation, send_admin_registration_notification
+import traceback
 
 bp = Blueprint('main', __name__)
 
@@ -45,15 +47,19 @@ def create_event():
             db.session.add(event)
             db.session.commit()
             
-            flash('Event created successfully!', 'success')
+            flash('Veranstaltung erfolgreich erstellt!', 'success')
             return redirect(url_for('main.index'))
         except ValueError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Fehler bei der Erstellung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
             flash(str(e), 'danger')
             return render_template('create_event.html', 
                                 default_date=date_str,
                                 form_data=request.form)
         except Exception as e:
-            flash('An error occurred while creating the event.', 'danger')
+            db.session.rollback()
+            current_app.logger.error(f"Fehler bei der Erstellung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+            flash('Ein Fehler ist aufgetreten, während die Veranstaltung erstellt wurde.', 'danger')
             return render_template('create_event.html', 
                                 default_date=date_str,
                                 form_data=request.form)
@@ -63,11 +69,12 @@ def create_event():
 
 @bp.route('/event/<int:event_id>/book', methods=['GET', 'POST'])
 def book_event(event_id):
+    """Book an event."""
     event = Event.query.get_or_404(event_id)
     
     if request.method == 'POST':
         if event.bookings >= event.capacity:
-            flash('Sorry, this event is fully booked!', 'error')
+            flash('Diese Veranstaltung ist leider ausgebucht!', 'error')
             return redirect(url_for('main.index'))
         
         name = request.form['name']
@@ -75,13 +82,34 @@ def book_event(event_id):
         phone = request.form['phone']
         
         booking = Booking(event_id=event_id, name=name, email=email, phone=phone)
-        event.bookings += 1
         
-        db.session.add(booking)
-        db.session.commit()
-        
-        flash('Booking successful!', 'success')
-        return redirect(url_for('main.book_event', event_id=event_id))
+        try:
+            # Start transaction
+            db.session.begin_nested()  # Create a savepoint
+            
+            # Add booking and increment counter
+            db.session.add(booking)
+            event.bookings += 1
+            
+            # Try to send confirmation email to user first
+            send_event_registration_confirmation(email, event)
+            
+            # Send notification to admin
+            user_data = {'name': name, 'email': email, 'phone': phone}
+            send_admin_registration_notification(event, user_data)
+            
+            # If emails sent successfully, commit the transaction
+            db.session.commit()
+            
+            flash('Buchung erfolgreich! Eine Bestätigungs-E-Mail wurde an Ihre E-Mail-Adresse gesendet.', 'success')
+            return redirect(url_for('main.book_event', event_id=event_id))
+            
+        except Exception as e:
+            # Roll back to the savepoint
+            db.session.rollback()
+            current_app.logger.error(f"Fehler bei der Buchung: {str(e)}\n{traceback.format_exc()}")
+            flash('Bei der Verarbeitung Ihrer Buchung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.', 'error')
+            return redirect(url_for('main.book_event', event_id=event_id))
     
     return render_template('book_event.html', event=event)
 
@@ -91,7 +119,7 @@ def edit_event(event_id):
     # Use get() instead of get_or_404() for better performance
     event = Event.query.get(event_id)
     if not event:
-        flash('Event not found.', 'danger')
+        flash('Veranstaltung nicht gefunden.', 'danger')
         return redirect(url_for('main.index'))
     
     if request.method == 'POST':
@@ -117,15 +145,17 @@ def edit_event(event_id):
             # Use a single commit for all changes
             db.session.commit()
             
-            flash('Event updated successfully!', 'success')
+            flash('Veranstaltung erfolgreich aktualisiert!', 'success')
             return redirect(url_for('main.index'))
             
         except ValueError as e:
             db.session.rollback()
+            current_app.logger.error(f"Fehler bei der Aktualisierung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
             flash(str(e), 'danger')
         except Exception as e:
             db.session.rollback()
-            flash('An error occurred while updating the event.', 'danger')
+            current_app.logger.error(f"Fehler bei der Aktualisierung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+            flash('Ein Fehler ist aufgetreten, während die Veranstaltung aktualisiert wurde.', 'danger')
     
     return render_template('edit_event.html', event=event)
 
@@ -143,7 +173,7 @@ def copy_event(event_id):
         
         # Create a new event with the same details
         new_event = Event(
-            title=f"Copy of {original_event.title}",
+            title=f"Kopie von {original_event.title}",
             description=original_event.description,
             date=event_date,
             capacity=original_event.capacity,
@@ -156,10 +186,17 @@ def copy_event(event_id):
         db.session.add(new_event)
         db.session.commit()
         
-        flash('Event copied successfully!', 'success')
+        flash('Veranstaltung erfolgreich kopiert!', 'success')
         return redirect(url_for('main.index'))
     except ValueError as e:
+        db.session.rollback()
+        current_app.logger.error(f"Fehler bei der Kopie der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
         flash(str(e), 'danger')
+        return redirect(url_for('main.index'))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Fehler bei der Kopie der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+        flash('Ein Fehler ist aufgetreten, während die Veranstaltung kopiert wurde.', 'danger')
         return redirect(url_for('main.index'))
 
 @bp.route('/event/<int:event_id>/toggle-visibility', methods=['POST'])
@@ -169,12 +206,13 @@ def toggle_visibility(event_id):
         event = Event.query.get_or_404(event_id)
         event.is_visible = not event.is_visible
         db.session.commit()
-        status = "visible" if event.is_visible else "hidden"
-        flash(f'Event is now {status}', 'success')
+        status = "sichtbar" if event.is_visible else "unsichtbar"
+        flash(f'Veranstaltung ist jetzt {status}', 'success')
         return redirect(url_for('main.index'))
     except Exception as e:
         db.session.rollback()
-        flash('Error updating event visibility', 'danger')
+        current_app.logger.error(f"Fehler bei der Aktualisierung der Sichtbarkeit der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+        flash('Fehler bei der Aktualisierung der Sichtbarkeit der Veranstaltung', 'danger')
         return redirect(url_for('main.index'))
 
 @bp.route('/event/<int:event_id>/registrations')
@@ -194,26 +232,40 @@ def delete_booking(booking_id):
     event.bookings = max(0, event.bookings - 1)
     
     # Delete the booking
-    db.session.delete(booking)
-    db.session.commit()
-    
-    flash('Anmeldung erfolgreich gelöscht.', 'success')
-    return redirect(url_for('main.view_registrations', event_id=booking.event_id))
+    try:
+        db.session.delete(booking)
+        db.session.commit()
+        flash('Anmeldung erfolgreich gelöscht.', 'success')
+        return redirect(url_for('main.view_registrations', event_id=booking.event_id))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Fehler bei der Löschung der Anmeldung: {str(e)}\n{traceback.format_exc()}")
+        flash('Ein Fehler ist aufgetreten, während die Anmeldung gelöscht wurde.', 'error')
+        return redirect(url_for('main.view_registrations', event_id=booking.event_id))
 
 @bp.route('/event/<int:event_id>/delete', methods=['POST'])
 @login_required
 def delete_event(event_id):
+    if not current_user.is_admin:
+        flash('Sie haben keine Berechtigung, Veranstaltungen zu löschen.', 'error')
+        return redirect(url_for('main.index'))
+    
     event = Event.query.get_or_404(event_id)
-    
-    # Delete associated bookings first
-    Booking.query.filter_by(event_id=event_id).delete()
-    
-    # Delete the event
-    db.session.delete(event)
-    db.session.commit()
-    
-    flash('Event successfully deleted.', 'success')
-    return redirect(url_for('main.index'))
+    try:
+        # Delete associated bookings first
+        Booking.query.filter_by(event_id=event_id).delete()
+        
+        # Delete the event
+        db.session.delete(event)
+        db.session.commit()
+        
+        flash('Veranstaltung erfolgreich gelöscht.', 'success')
+        return redirect(url_for('main.index'))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Fehler bei der Löschung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+        flash('Ein Fehler ist aufgetreten, während die Veranstaltung gelöscht wurde.', 'error')
+        return redirect(url_for('main.index'))
 
 @bp.route('/health')
 def health_check():
@@ -227,6 +279,7 @@ def health_check():
             'timestamp': datetime.now(timezone.utc).isoformat()
         }), 200
     except Exception as e:
+        current_app.logger.error(f"Fehler bei der Überprüfung der Gesundheit: {str(e)}\n{traceback.format_exc()}")
         return jsonify({
             'status': 'unhealthy',
             'database': 'disconnected',

@@ -3,6 +3,7 @@ from .config import Config
 from .extensions import db, login_manager, migrate
 from .commands import create_admin, init_db
 from .database import init_database
+from .utils.email import mail
 import os
 import logging
 
@@ -15,17 +16,20 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    mail.init_app(app)
     
     # Register blueprints
     from .routes.main import bp as main_bp
     from .routes.auth import bp as auth_bp
     from .routes.events import bp as events_bp
     from .routes.bookings import bp as bookings_bp
+    from .routes.debug_test import debug_test_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(events_bp)
     app.register_blueprint(bookings_bp)
+    app.register_blueprint(debug_test_bp)
 
     # Set up user loader for Flask-Login
     @login_manager.user_loader

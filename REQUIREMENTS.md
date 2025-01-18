@@ -74,3 +74,54 @@
 - ✅ Easy backup capability
 - ✅ Troubleshooting guides
 - ✅ Update procedures
+
+## Future Requirements
+
+### Event Organization
+- [ ] Advanced search and filter functionality
+- [ ] Event series management
+- [ ] Event location management
+
+### Booking System Enhancements
+- [ ] Waitlist functionality
+
+### User Experience Improvements
+- [ ] Email notification system
+  - [ ] Booking confirmations
+  - [ ] Event updates
+  - [ ] Reminder notifications
+- [ ] Calendar integration
+  - [ ] iCal export
+  - [ ] Google Calendar integration
+- [ ] Enhanced mobile responsiveness
+
+### Payment System
+- [ ] Online payment processing
+- [ ] Multiple payment method support
+- [ ] Automatic invoice generation
+- [ ] Payment status tracking
+
+### Analytics and Reporting
+- [ ] Event attendance tracking
+- [ ] Revenue analytics
+- [ ] Event popularity metrics
+- [ ] Booking pattern analysis
+- [ ] Custom report generation
+
+### Social Features
+- [ ] Social media sharing integration
+- [ ] Event reviews and ratings system
+- [ ] Enhanced attendee profiles
+- [ ] Event recommendation engine
+- [ ] Community features
+
+
+# Additional Requirements
+- [ ] ⁠email bei Anmeldung
+- [ ] ⁠⁠User Accounts
+- [ ] ⁠⁠auf der Übersicht sehen, wie viele Plätze vergeben sind
+- [ ] ⁠⁠ein Export der teilnehmenden, damit man die nicht mit der Hand abschreiben muss
+- [ ] ⁠Pay Button/Link zu paypal?
+- [ ] ⁠TN Anzahl 6 -ab wann Kurs findet statt steht.
+- [ ] ⁠Automat. Reminder-mail.
+- [ ] (Downloads auf Website)

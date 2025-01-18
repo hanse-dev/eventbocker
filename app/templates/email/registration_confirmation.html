@@ -1,0 +1,14 @@
+<h2>Vielen Dank für Ihre Anmeldung zu {{ event.title }}!</h2>
+
+<h3>Veranstaltungsdetails:</h3>
+<ul>
+    <li><strong>Datum:</strong> {{ event.date.strftime('%d. %B %Y') }}</li>
+    <li><strong>Uhrzeit:</strong> {{ event.date.strftime('%H:%M') }} Uhr</li>
+    <li><strong>Ort:</strong> {{ event.room or 'Wird noch bekannt gegeben' }}</li>
+    <li><strong>Adresse:</strong> {{ event.address or 'Wird noch bekannt gegeben' }}</li>
+</ul>
+
+<p>Wir freuen uns darauf, Sie dort zu sehen!</p>
+
+<p>Mit freundlichen Grüßen,<br>
+Ihr NADA-Team</p>
