@@ -47,14 +47,20 @@ mkdir -p /app/instance
 if [ -f "/app/instance/data.db" ]; then
     log "Database file exists"
     # Debug: List tables in database
-    echo ".tables" | sqlite3 /app/instance/data.db
-    # Debug: Count events
-    echo "SELECT COUNT(*) FROM event;" | sqlite3 /app/instance/data.db
-    # Debug: Show event details
-    echo "SELECT id, title, date, is_visible FROM event;" | sqlite3 /app/instance/data.db
+    echo ".tables" | sqlite3 /app/instance/data.db || true
 else
     log "Database file does not exist"
 fi
+
+# Initialize database tables
+log "Initializing database tables..."
+python3 -c "
+from app.app import create_app
+from app.models.models import db
+app = create_app()
+with app.app_context():
+    db.create_all()
+" || log "Warning: Table creation failed, but continuing..."
 
 # Check if migrations exist and apply them if needed
 if [ -d "/app/migrations" ]; then
@@ -65,9 +71,17 @@ if [ -d "/app/migrations" ]; then
     
     # Debug: Check database after migration
     log "Database state after migration:"
-    echo ".tables" | sqlite3 /app/instance/data.db
-    echo "SELECT COUNT(*) FROM event;" | sqlite3 /app/instance/data.db
-    echo "SELECT id, title, date, is_visible FROM event;" | sqlite3 /app/instance/data.db
+    echo ".tables" | sqlite3 /app/instance/data.db || true
+fi
+
+# Debug: Show final database state
+log "Final database state:"
+echo ".tables" | sqlite3 /app/instance/data.db || true
+if echo ".tables" | sqlite3 /app/instance/data.db | grep -q "event"; then
+    log "Event table exists, showing contents:"
+    echo "SELECT id, title, date, is_visible FROM event;" | sqlite3 /app/instance/data.db || true
+else
+    log "Event table does not exist"
 fi
 
 # =================================================================
