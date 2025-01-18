@@ -1,12 +1,18 @@
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from ..extensions import db
 from sqlalchemy.orm import validates
+import pytz
+from flask import current_app
 
 def get_utc_now():
     """Get current UTC time."""
     return datetime.now(timezone.utc)
+
+def get_local_now():
+    """Get current local time."""
+    return datetime.now().astimezone()
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -38,10 +44,12 @@ class Event(db.Model):
         if not isinstance(date, datetime):
             raise ValueError("Date must be a datetime object")
         
+        # Convert to timezone-aware if it's naive
         if not date.tzinfo:
-            raise ValueError("Date must be timezone-aware")
+            date = date.astimezone()
             
-        if date < get_utc_now():
+        # Compare with local time
+        if date < get_local_now():
             raise ValueError("Event date cannot be in the past")
             
         return date
@@ -70,11 +78,26 @@ class Event(db.Model):
         Returns:
             List of Event objects that are in the future, ordered by date
         """
-        now = get_utc_now()  # Use our utility function
+        now = get_local_now()
+        current_app.logger.info(f"Current time: {now}")
+        
+        # First get all events
+        all_events = cls.query.all()
+        current_app.logger.info(f"Total events in database: {len(all_events)}")
+        for event in all_events:
+            current_app.logger.info(f"Event: {event.title}, Date: {event.date}, Visible: {event.is_visible}")
+        
+        # Then apply filters
         query = cls.query.filter(cls.date >= now)
         if not include_invisible:
             query = query.filter_by(is_visible=True)
-        return query.order_by(cls.date.asc()).all()
+        
+        events = query.order_by(cls.date.asc()).all()
+        current_app.logger.info(f"Filtered events count: {len(events)}")
+        for event in events:
+            current_app.logger.info(f"Filtered event: {event.title}, Date: {event.date}")
+        
+        return events
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)

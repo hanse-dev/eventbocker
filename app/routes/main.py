@@ -10,13 +10,30 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
+    current_app.logger.info("Accessing index route")
+    current_app.logger.info(f"User authenticated: {current_user.is_authenticated}")
+    if current_user.is_authenticated:
+        current_app.logger.info(f"User is admin: {current_user.is_admin}")
+
+    # Debug: Check all events in database
+    all_events = Event.query.all()
+    current_app.logger.info(f"Total events in database: {len(all_events)}")
+    for event in all_events:
+        current_app.logger.info(f"Event in DB: {event.title}, Date: {event.date}, Visible: {event.is_visible}")
+
     if current_user.is_authenticated and current_user.is_admin:
         # Admin sees all future events, including invisible ones
         events = Event.get_future_events(include_invisible=True)
+        current_app.logger.info(f"Admin view - Future events count: {len(events)}")
+        for event in events:
+            current_app.logger.info(f"Admin future event: {event.title}, Date: {event.date}")
         return render_template('index.html', events=events)
     else:
         # Non-admin users only see visible future events
         events = Event.get_future_events(include_invisible=False)
+        current_app.logger.info(f"User view - Future events count: {len(events)}")
+        for event in events:
+            current_app.logger.info(f"User future event: {event.title}, Date: {event.date}")
         return render_template('index.html', events=events)
 
 @bp.route('/event/create', methods=['GET', 'POST'])

@@ -43,38 +43,41 @@ log "Setting up database..."
 # Create instance directory if it doesn't exist
 mkdir -p /app/instance
 
-# Initialize migrations if they don't exist
-if [ ! -d "/app/migrations" ]; then
-    log "Initializing migrations..."
-    flask db init
-fi
-
-# Check for any pending changes and create a new migration if needed
-if flask db current > /dev/null 2>&1; then
-    log "Checking for model changes..."
-    if flask db check > /dev/null 2>&1; then
-        log "No model changes detected"
-    else
-        log "Model changes detected, creating new migration..."
-        flask db migrate -m "auto migration $(date +%Y%m%d_%H%M%S)"
-    fi
+# Debug: Check database file
+if [ -f "/app/instance/data.db" ]; then
+    log "Database file exists"
+    # Debug: List tables in database
+    echo ".tables" | sqlite3 /app/instance/data.db
+    # Debug: Count events
+    echo "SELECT COUNT(*) FROM event;" | sqlite3 /app/instance/data.db
+    # Debug: Show event details
+    echo "SELECT id, title, date, is_visible FROM event;" | sqlite3 /app/instance/data.db
 else
-    log "No existing migrations found, creating initial migration..."
-    flask db migrate -m "initial"
+    log "Database file does not exist"
 fi
 
-# Apply any pending migrations
-log "Applying migrations..."
-flask db upgrade
+# Check if migrations exist and apply them if needed
+if [ -d "/app/migrations" ]; then
+    log "Checking for pending migrations..."
+    cd /app && flask db upgrade || {
+        log "Warning: Migration upgrade failed, but continuing..."
+    }
+    
+    # Debug: Check database after migration
+    log "Database state after migration:"
+    echo ".tables" | sqlite3 /app/instance/data.db
+    echo "SELECT COUNT(*) FROM event;" | sqlite3 /app/instance/data.db
+    echo "SELECT id, title, date, is_visible FROM event;" | sqlite3 /app/instance/data.db
+fi
 
 # =================================================================
 # Application Startup
 # =================================================================
 
 if [ "${FLASK_ENV}" = "development" ]; then
-    # Start Flask development server with debugger
-    log "Starting Flask development server..."
-    exec python -m debugpy --listen 0.0.0.0:5678 -m flask run --host=0.0.0.0 --port=5001
+    # Development mode is handled by docker-compose.override.yml
+    log "Development mode startup skipped (handled by override)"
+    exit 0
 else
     # Start Gunicorn for production
     log "Starting Gunicorn server..."

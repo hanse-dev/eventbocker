@@ -3,77 +3,77 @@
 ## Core Functionality Requirements
 
 ### Event Management
-- ✅ Create new events with detailed information
-- ✅ Edit existing event details
-- ✅ Delete events
-- ✅ View event details
-- ✅ List all events with pagination
+- [x] Create new events with detailed information
+- [x] Edit existing event details
+- [x] Delete events
+- [x] View event details
+- [x] List all events with pagination
 
 ### User Management
-- ✅ User registration system
-- ✅ User authentication (login/logout)
-- ✅ Admin user role with special privileges
-- ✅ User profile management
+- [x] User registration system
+- [x] User authentication (login/logout)
+- [x] Admin user role with special privileges
+- [x] User profile management
 
 ### Security Requirements
-- ✅ Secure password hashing
-- ✅ Protected API endpoints
-- ✅ Session management
-- ✅ Environment-based configuration
-- ✅ Secret key management
+- [x] Secure password hashing
+- [x] Protected API endpoints
+- [x] Session management
+- [x] Environment-based configuration
+- [x] Secret key management
 
 ## Technical Requirements
 
 ### Backend
-- ✅ Flask-based REST API
-- ✅ SQLite database integration
-- ✅ Model-View-Controller (MVC) architecture
-- ✅ Database migrations support
-- ✅ Error handling and logging
+- [x] Flask-based REST API
+- [x] SQLite database integration
+- [x] Model-View-Controller (MVC) architecture
+- [x] Database migrations support
+- [x] Error handling and logging
 
 ### Frontend
-- ✅ Responsive web interface
-- ✅ Modern UI/UX design
-- ✅ Dynamic content loading
-- ✅ Form validation
-- ✅ User-friendly notifications
+- [x] Responsive web interface
+- [x] Modern UI/UX design
+- [x] Dynamic content loading
+- [x] Form validation
+- [x] User-friendly notifications
 
 ### Deployment & Infrastructure
-- ✅ Docker containerization
-- ✅ Docker Compose support
-- ✅ Environment configuration
-- ✅ Data persistence
-- ✅ Local development setup
-- ✅ Production deployment ready
+- [x] Docker containerization
+- [x] Docker Compose support
+- [x] Environment configuration
+- [x] Data persistence
+- [x] Local development setup
+- [x] Production deployment ready
 
 ## Development Requirements
 
 ### Code Quality
-- ✅ Modular code structure
-- ✅ Clear project organization
-- ✅ Documentation
-- ✅ Version control (Git)
-- ✅ Dependency management
+- [x] Modular code structure
+- [x] Clear project organization
+- [x] Documentation
+- [x] Version control (Git)
+- [x] Dependency management
 
 ### Configuration
-- ✅ Environment-based settings
-- ✅ Configurable ports and hosts
-- ✅ Customizable database settings
-- ✅ Admin credentials configuration
+- [x] Environment-based settings
+- [x] Configurable ports and hosts
+- [x] Customizable database settings
+- [x] Admin credentials configuration
 
 ## Operational Requirements
 
 ### Installation
-- ✅ Simple setup process
-- ✅ Clear installation instructions
-- ✅ Multiple installation methods (local/Docker)
-- ✅ Dependency resolution
+- [x] Simple setup process
+- [x] Clear installation instructions
+- [x] Multiple installation methods (local/Docker)
+- [x] Dependency resolution
 
 ### Maintenance
-- ✅ Data persistence across restarts
-- ✅ Easy backup capability
-- ✅ Troubleshooting guides
-- ✅ Update procedures
+- [x] Data persistence across restarts
+- [x] Easy backup capability
+- [x] Troubleshooting guides
+- [x] Update procedures
 
 ## Future Requirements
 
@@ -81,19 +81,22 @@
 - [ ] Advanced search and filter functionality
 - [ ] Event series management
 - [ ] Event location management
+- [ ] Enhanced event descriptions
+  - [ ] Short description for event preview/listing
+  - [ ] Detailed long description for event details page
 
 ### Booking System Enhancements
 - [ ] Waitlist functionality
 
 ### User Experience Improvements
-- [ ] Email notification system
-  - [ ] Booking confirmations
+- [x] Email notification system
+  - [x] Booking confirmations
   - [ ] Event updates
   - [ ] Reminder notifications
 - [ ] Calendar integration
   - [ ] iCal export
   - [ ] Google Calendar integration
-- [ ] Enhanced mobile responsiveness
+- [x] Enhanced mobile responsiveness
 
 ### Payment System
 - [ ] Online payment processing
@@ -119,7 +122,7 @@
 # Additional Requirements
 - [ ] ⁠email bei Anmeldung
 - [ ] ⁠⁠User Accounts
-- [ ] ⁠⁠auf der Übersicht sehen, wie viele Plätze vergeben sind
+- [x] ⁠⁠auf der Übersicht sehen, wie viele Plätze vergeben sind
 - [ ] ⁠⁠ein Export der teilnehmenden, damit man die nicht mit der Hand abschreiben muss
 - [ ] ⁠Pay Button/Link zu paypal?
 - [ ] ⁠TN Anzahl 6 -ab wann Kurs findet statt steht.

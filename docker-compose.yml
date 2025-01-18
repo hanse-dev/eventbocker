@@ -11,6 +11,7 @@ services:
       - PORT=5001
     volumes:
       - ./instance:/app/instance
+      - ./migrations:/app/migrations
     user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped
     healthcheck:

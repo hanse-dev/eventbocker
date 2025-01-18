@@ -11,7 +11,7 @@ login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 mail = Mail()
 
-def create_app():
+def create_app(init_db=True):
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__)
     app.config.from_object('app.config.Config')
@@ -41,8 +41,9 @@ def create_app():
             from .models import User
             return User.query.get(int(user_id))
 
-        # Initialize database
-        from .database import init_database
-        init_database()
+        # Initialize database only if requested
+        if init_db:
+            from .database import init_database
+            init_database()
 
     return app

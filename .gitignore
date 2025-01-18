@@ -31,3 +31,4 @@ ENV/
 logs/
 *.log
 instance/data.db
+.env copy

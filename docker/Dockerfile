@@ -17,6 +17,8 @@ RUN apt-get update \
         gcc \
         python3-dev \
         libpq-dev \
+        sqlite3 \
+        curl \
     && pip install --no-cache-dir -r requirements.txt \
     && apt-get remove -y gcc python3-dev \
     && apt-get autoremove -y \
