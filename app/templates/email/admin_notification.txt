@@ -1,0 +1,12 @@
+Ein neuer Teilnehmer hat sich für {{ event.title }} angemeldet.
+
+Teilnehmerdetails:
+- Name: {{ user.name }}
+- E-Mail: {{ user.email }}
+- Telefon: {{ user.phone }}
+
+Veranstaltungsdetails:
+- Datum: {{ event.date.strftime('%d. %B %Y') }}
+- Uhrzeit: {{ event.date.strftime('%H:%M') }} Uhr
+- Ort: {{ event.room or 'Wird noch bekannt gegeben' }}
+- Aktuelle Anmeldungen: {{ event.bookings }}/{{ event.capacity }}

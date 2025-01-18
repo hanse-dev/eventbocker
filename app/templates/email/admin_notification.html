@@ -1,0 +1,16 @@
+<h2>Ein neuer Teilnehmer hat sich für {{ event.title }} angemeldet.</h2>
+
+<h3>Teilnehmerdetails:</h3>
+<ul>
+    <li><strong>Name:</strong> {{ user.name }}</li>
+    <li><strong>E-Mail:</strong> {{ user.email }}</li>
+    <li><strong>Telefon:</strong> {{ user.phone }}</li>
+</ul>
+
+<h3>Veranstaltungsdetails:</h3>
+<ul>
+    <li><strong>Datum:</strong> {{ event.date.strftime('%d. %B %Y') }}</li>
+    <li><strong>Uhrzeit:</strong> {{ event.date.strftime('%H:%M') }} Uhr</li>
+    <li><strong>Ort:</strong> {{ event.room or 'Wird noch bekannt gegeben' }}</li>
+    <li><strong>Aktuelle Anmeldungen:</strong> {{ event.bookings }}/{{ event.capacity }}</li>
+</ul>

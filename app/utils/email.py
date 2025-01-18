@@ -1,26 +1,47 @@
 from flask_mail import Mail, Message
-from flask import current_app
+from flask import current_app, render_template
 from datetime import datetime
+import logging
 
 mail = Mail()
 
-def send_email(subject, recipients, body, html=None):
+def init_mail(app):
+    """Initialize mail with app configuration"""
+    if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
+        app.logger.warning('E-Mail-Konfiguration unvollständig: MAIL_USERNAME oder MAIL_PASSWORD fehlt')
+    mail.init_app(app)
+
+def send_email(subject, recipients, template_prefix, **template_context):
     """
-    Send an email using Flask-Mail
+    Send an email using Flask-Mail with templates
     
     Args:
         subject (str): Email subject
         recipients (list): List of recipient email addresses
-        body (str): Plain text email body
-        html (str, optional): HTML version of the email body
+        template_prefix (str): Prefix for the template files (e.g., 'registration_confirmation')
+        **template_context: Context variables for the template
     """
-    msg = Message(
-        subject=subject,
-        recipients=recipients,
-        body=body,
-        html=html
-    )
-    mail.send(msg)
+    if not current_app.config.get('MAIL_USERNAME') or not current_app.config.get('MAIL_PASSWORD'):
+        current_app.logger.error("E-Mail-Konfiguration unvollständig: MAIL_USERNAME oder MAIL_PASSWORD fehlt")
+        raise ValueError("E-Mail-Konfiguration unvollständig: MAIL_USERNAME oder MAIL_PASSWORD fehlt")
+        
+    try:
+        # Render both text and HTML versions using templates
+        txt = render_template(f"email/{template_prefix}.txt", **template_context)
+        html = render_template(f"email/{template_prefix}.html", **template_context)
+        
+        msg = Message(
+            subject=subject,
+            recipients=recipients,
+            body=txt,
+            html=html,
+            sender=current_app.config['MAIL_USERNAME']
+        )
+        mail.send(msg)
+        current_app.logger.info(f"E-Mail erfolgreich gesendet an {', '.join(recipients)}")
+    except Exception as e:
+        current_app.logger.error(f"E-Mail konnte nicht gesendet werden: {str(e)}")
+        raise
 
 def send_password_reset_email(user, token):
     """
@@ -31,18 +52,13 @@ def send_password_reset_email(user, token):
         token: Password reset token
     """
     reset_url = f"{current_app.config['BASE_URL']}/reset-password/{token}"
-    subject = "Password Reset Request"
-    body = f"""To reset your password, visit the following link:
-{reset_url}
-
-If you did not make this request, please ignore this email.
-"""
-    html = f"""
-    <p>To reset your password, click the following link:</p>
-    <p><a href="{reset_url}">Reset Password</a></p>
-    <p>If you did not make this request, please ignore this email.</p>
-    """
-    send_email(subject, [user.email], body, html)
+    subject = "Passwort zurücksetzen"
+    send_email(
+        subject=subject,
+        recipients=[user.email],
+        template_prefix='password_reset',
+        reset_url=reset_url
+    )
 
 def send_event_registration_confirmation(user_email, event):
     """
@@ -52,38 +68,13 @@ def send_event_registration_confirmation(user_email, event):
         user_email (str): Email address of the registered user
         event (Event): Event object containing event details
     """
-    subject = f"Registration Confirmation - {event.title}"
-    body = f"""
-Thank you for registering for {event.title}!
-
-Event Details:
-- Date: {event.date.strftime('%B %d, %Y')}
-- Time: {event.date.strftime('%I:%M %p')}
-- Location: {event.room or 'TBA'}
-- Address: {event.address or 'TBA'}
-
-We look forward to seeing you there!
-
-Best regards,
-The Event Team
-"""
-    html = f"""
-    <h2>Thank you for registering for {event.title}!</h2>
-    
-    <h3>Event Details:</h3>
-    <ul>
-        <li><strong>Date:</strong> {event.date.strftime('%B %d, %Y')}</li>
-        <li><strong>Time:</strong> {event.date.strftime('%I:%M %p')}</li>
-        <li><strong>Location:</strong> {event.room or 'TBA'}</li>
-        <li><strong>Address:</strong> {event.address or 'TBA'}</li>
-    </ul>
-    
-    <p>We look forward to seeing you there!</p>
-    
-    <p>Best regards,<br>
-    The Event Team</p>
-    """
-    send_email(subject, [user_email], body, html)
+    subject = f"Anmeldebestätigung - {event.title}"
+    send_email(
+        subject=subject,
+        recipients=[user_email],
+        template_prefix='registration_confirmation',
+        event=event
+    )
 
 def send_admin_registration_notification(event, user):
     """
@@ -91,43 +82,18 @@ def send_admin_registration_notification(event, user):
     
     Args:
         event (Event): Event object containing event details
-        user (User): User object containing user details
+        user (dict): Dictionary containing user details (name, email, phone)
     """
-    admin_email = current_app.config['ADMIN_EMAIL']
+    admin_email = current_app.config.get('ADMIN_EMAIL')
     if not admin_email:
+        current_app.logger.warning('Admin-E-Mail nicht konfiguriert. Admin-Benachrichtigung wird übersprungen.')
         return
         
-    subject = f"New Event Registration - {event.title}"
-    body = f"""
-New registration for {event.title}
-
-User Details:
-- Name: {user.name}
-- Email: {user.email}
-
-Event Details:
-- Date: {event.date.strftime('%B %d, %Y')}
-- Time: {event.time.strftime('%I:%M %p')}
-- Location: {event.location}
-
-Registration Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-"""
-    html = f"""
-    <h2>New registration for {event.title}</h2>
-    
-    <h3>User Details:</h3>
-    <ul>
-        <li><strong>Name:</strong> {user.name}</li>
-        <li><strong>Email:</strong> {user.email}</li>
-    </ul>
-    
-    <h3>Event Details:</h3>
-    <ul>
-        <li><strong>Date:</strong> {event.date.strftime('%B %d, %Y')}</li>
-        <li><strong>Time:</strong> {event.time.strftime('%I:%M %p')}</li>
-        <li><strong>Location:</strong> {event.location}</li>
-    </ul>
-    
-    <p><strong>Registration Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-    """
-    send_email(subject, [admin_email], body, html)
+    subject = f"Neue Anmeldung - {event.title}"
+    send_email(
+        subject=subject,
+        recipients=[admin_email],
+        template_prefix='admin_notification',
+        event=event,
+        user=user
+    )
