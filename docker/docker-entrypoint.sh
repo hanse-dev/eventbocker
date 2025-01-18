@@ -43,15 +43,6 @@ log "Setting up database..."
 # Create instance directory if it doesn't exist
 mkdir -p /app/instance
 
-# Debug: Check database file
-if [ -f "/app/instance/data.db" ]; then
-    log "Database file exists"
-    # Debug: List tables in database
-    echo ".tables" | sqlite3 /app/instance/data.db || true
-else
-    log "Database file does not exist"
-fi
-
 # Initialize database tables
 log "Initializing database tables..."
 python3 -c "
@@ -62,44 +53,39 @@ with app.app_context():
     db.create_all()
 " || log "Warning: Table creation failed, but continuing..."
 
-# Handle migrations
-if [ -d "/app/migrations" ]; then
+# Initialize migrations if they don't exist
+if [ ! -d "/app/migrations" ]; then
+    log "Initializing new migrations..."
+    flask db init || log "Warning: Migration initialization failed, but continuing..."
+fi
+
+# Check current migration state
+log "Checking migration state..."
+current_version=$(echo "SELECT version_num FROM alembic_version;" | sqlite3 /app/instance/data.db 2>/dev/null || echo "none")
+log "Current database version: ${current_version}"
+
+if [ "${current_version}" = "none" ]; then
+    # No version - create and apply initial migration
+    log "No version found, creating initial migration..."
+    flask db migrate -m "initial migration" || log "Warning: Migration creation failed, but continuing..."
+    flask db stamp head || log "Warning: Version stamping failed, but continuing..."
+    flask db upgrade || log "Warning: Migration upgrade failed, but continuing..."
+else
+    # Version exists - check for and apply any pending migrations
     log "Checking for pending migrations..."
-    
-    # First, try to get the current version
-    current_version=$(echo "SELECT version_num FROM alembic_version;" | sqlite3 /app/instance/data.db 2>/dev/null || echo "none")
-    log "Current database version: ${current_version}"
-    
-    if [ "${current_version}" = "none" ]; then
-        # No version - stamp with current head
-        log "No version found, stamping with current head..."
-        cd /app && flask db stamp head || log "Warning: Version stamping failed, but continuing..."
-    fi
-    
-    # Now try to upgrade
-    cd /app && flask db upgrade || {
+    flask db upgrade || {
         log "Warning: Migration upgrade failed, attempting to stamp and upgrade..."
         flask db stamp head
         flask db upgrade || log "Warning: Migration upgrade failed, but continuing..."
     }
-    
-    # Debug: Check database after migration
-    log "Database state after migration:"
-    echo ".tables" | sqlite3 /app/instance/data.db || true
 fi
 
-# Debug: Show final database state
+# Verify final database state
 log "Final database state:"
 echo ".tables" | sqlite3 /app/instance/data.db || true
-if echo ".tables" | sqlite3 /app/instance/data.db | grep -q "event"; then
-    log "Event table exists, showing contents:"
-    echo "SELECT id, title, date, is_visible FROM event;" | sqlite3 /app/instance/data.db || true
-else
-    log "Event table does not exist"
-fi
 
 # =================================================================
-# Application Startup
+# Start Application
 # =================================================================
 
 if [ "${FLASK_ENV}" = "development" ]; then
