@@ -62,11 +62,25 @@ with app.app_context():
     db.create_all()
 " || log "Warning: Table creation failed, but continuing..."
 
-# Check if migrations exist and apply them if needed
+# Handle migrations
 if [ -d "/app/migrations" ]; then
     log "Checking for pending migrations..."
+    
+    # First, try to get the current version
+    current_version=$(echo "SELECT version_num FROM alembic_version;" | sqlite3 /app/instance/data.db 2>/dev/null || echo "none")
+    log "Current database version: ${current_version}"
+    
+    if [ "${current_version}" = "none" ]; then
+        # No version - stamp with current head
+        log "No version found, stamping with current head..."
+        cd /app && flask db stamp head || log "Warning: Version stamping failed, but continuing..."
+    fi
+    
+    # Now try to upgrade
     cd /app && flask db upgrade || {
-        log "Warning: Migration upgrade failed, but continuing..."
+        log "Warning: Migration upgrade failed, attempting to stamp and upgrade..."
+        flask db stamp head
+        flask db upgrade || log "Warning: Migration upgrade failed, but continuing..."
     }
     
     # Debug: Check database after migration
