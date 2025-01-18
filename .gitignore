@@ -32,3 +32,4 @@ logs/
 *.log
 instance/data.db
 .env copy
+instance/data.db.bak

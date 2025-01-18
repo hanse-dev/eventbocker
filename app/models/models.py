@@ -19,6 +19,9 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Add relationship to bookings
+    bookings = db.relationship('Booking', backref='user', lazy=True, cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -37,6 +40,9 @@ class Event(db.Model):
     address = db.Column(db.String(200), nullable=True)
     is_visible = db.Column(db.Boolean, default=True, nullable=False)
     price = db.Column(db.Float, nullable=False, default=0.0)
+    
+    # Add relationship to bookings
+    event_bookings = db.relationship('Booking', backref='event', lazy=True, cascade="all, delete-orphan")
 
     @validates('date')
     def validate_date(self, key, date):
@@ -101,8 +107,10 @@ class Event(db.Model):
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id', ondelete='CASCADE'), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=get_utc_now)
+    
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'event_id', name='_user_event_uc'),
+    )
