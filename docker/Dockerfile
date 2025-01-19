@@ -19,6 +19,7 @@ RUN apt-get update \
         libpq-dev \
         sqlite3 \
         curl \
+        dos2unix \
     && pip install --no-cache-dir -r requirements.txt \
     && apt-get remove -y gcc python3-dev \
     && apt-get autoremove -y \
@@ -28,8 +29,9 @@ RUN apt-get update \
 # Copy application code
 COPY . .
 
-# Make the entrypoint script executable
-RUN chmod +x /app/docker/docker-entrypoint.sh
+# Fix line endings and make the entrypoint script executable
+RUN dos2unix /app/docker/docker-entrypoint.sh \
+    && chmod +x /app/docker/docker-entrypoint.sh
 
 EXPOSE 5001
 

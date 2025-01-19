@@ -33,3 +33,4 @@ logs/
 instance/data.db
 .env copy
 instance/data.db.bak
+instance/backup.json
