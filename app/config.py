@@ -22,6 +22,7 @@ class Config:
     PORT = int(os.environ.get('PORT', 5001))
     
     # Email configuration
+    DISABLE_EMAILS = os.environ.get('DISABLE_EMAILS', 'False').lower() == 'true'
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.strato.de')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 465))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'False').lower() == 'true'

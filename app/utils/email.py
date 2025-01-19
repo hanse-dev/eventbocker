@@ -21,6 +21,11 @@ def send_email(subject, recipients, template_prefix, **template_context):
         template_prefix (str): Prefix for the template files (e.g., 'registration_confirmation')
         **template_context: Context variables for the template
     """
+    # Check if emails are disabled
+    if current_app.config.get('DISABLE_EMAILS', False):
+        current_app.logger.info(f"Emails disabled. Would have sent email '{subject}' to {', '.join(recipients)}")
+        return
+        
     if not current_app.config.get('MAIL_USERNAME') or not current_app.config.get('MAIL_PASSWORD'):
         current_app.logger.error("E-Mail-Konfiguration unvollständig: MAIL_USERNAME oder MAIL_PASSWORD fehlt")
         raise ValueError("E-Mail-Konfiguration unvollständig: MAIL_USERNAME oder MAIL_PASSWORD fehlt")
