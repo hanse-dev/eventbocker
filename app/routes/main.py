@@ -117,11 +117,13 @@ def book_event(event_id):
             
             # If emails sent successfully, commit the transaction
             db.session.commit()
-            if current_app.config.get('DISABLE_EMAILS', False):
-                flash('Buchung erfolgreich! Eine Bestätigungs-E-Mail wurde an Ihre E-Mail-Adresse gesendet.', 'success')
-            else:
-                flash('Buchung erfolgreich! Wir haben Sie für die Veranstaltung gebucht.', 'success')
-                
+            flash('Buchung erfolgreich! Wir haben Sie für die Veranstaltung gebucht.', 'success')
+            
+            #if current_app.config.get('DISABLE_EMAILS', False):
+            #    flash('Buchung erfolgreich! Eine Bestätigungs-E-Mail wurde an Ihre E-Mail-Adresse gesendet.', 'success')
+            #else:
+            #    flash('Buchung erfolgreich! Wir haben Sie für die Veranstaltung gebucht.', 'success')
+
             return redirect(url_for('main.book_event', event_id=event_id))
             
         except Exception as e:
