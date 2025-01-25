@@ -11,7 +11,6 @@
   - Don't destory code when refactoring; create a new branch and commit changes.
   - Use linting tools for code quality and consistency.
   
-
   Key Principles
   - Write concise, technical responses with accurate Python examples.
   - Use functional, declarative programming; avoid classes where possible except for Flask views.

@@ -23,13 +23,11 @@ def create_app():
     from .routes.auth import bp as auth_bp
     from .routes.events import bp as events_bp
     from .routes.bookings import bp as bookings_bp
-    from .routes.debug_test import debug_test_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(events_bp)
     app.register_blueprint(bookings_bp)
-    app.register_blueprint(debug_test_bp)
 
     # Set up user loader for Flask-Login
     @login_manager.user_loader
