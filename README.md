@@ -18,7 +18,7 @@ A Flask-based event management system for creating and managing events.
 │   └── docker-entrypoint.sh  # Unified entrypoint script
 ├── instance/         # SQLite database (gitignored)
 ├── requirements.txt  # Python dependencies
-├── init_db.py       # Database initialization script
+├── init_migrations.py # Database migration manager
 ├── docker-compose.yml      # Production deployment
 ├── docker-compose.dev.yml  # Development setup
 └── example.env      # Environment variables template
@@ -36,10 +36,10 @@ A Flask-based event management system for creating and managing events.
 2. Build and start the containers:
    ```bash
    # For development (includes hot-reload and debugging)
-   docker-compose -f docker-compose.dev.yml up --build
+   docker compose -f docker-compose.dev.yml up --build
 
    # For production
-   docker-compose up --build
+   docker compose up --build
    ```
 
 The application will be available at:
@@ -53,7 +53,7 @@ Our Docker setup includes several developer-friendly features:
 1. **Hot Reload**: Code changes are automatically detected and reloaded
 2. **Remote Debugging**: Available on port 5678 (use VS Code or PyCharm)
 3. **Pip Cache**: Dependencies are cached between builds
-4. **Database Migrations**: Automatically handled on startup
+4. **Database Migrations**: Automatic schema management with data preservation
 5. **Health Checks**: Built-in container health monitoring
 6. **Security**: Runs as non-root user with proper permissions
 7. **Logging**: Structured logging with rotation
@@ -64,51 +64,91 @@ Our Docker setup includes several developer-friendly features:
 
 ```bash
 # Start development environment
-docker-compose -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up --build
 
 # Start in debug mode (enables remote debugger)
-FLASK_DEBUG=1 docker-compose -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up --build -e FLASK_DEBUG=1
 
-# View logs with timestamps
-docker-compose -f docker-compose.dev.yml logs -f --timestamps
+# View logs
+docker compose -f docker-compose.dev.yml logs -f web
 
-# Rebuild without cache (if dependencies changed)
-docker-compose -f docker-compose.dev.yml build --no-cache
+# Rebuild without cache
+docker compose -f docker-compose.dev.yml build --no-cache
 
 # Stop and remove containers
-docker-compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.dev.yml down
 
 # Restart services
-docker-compose -f docker-compose.dev.yml restart
+docker compose -f docker-compose.dev.yml restart
 ```
 
 #### Production Environment
 
 ```bash
 # Start production environment
-docker-compose up --build
+docker compose up --build
 
-# View logs with timestamps
-docker-compose logs -f --timestamps
+# View logs
+docker compose logs -f web
 
 # Stop and remove containers
-docker-compose down
+docker compose down
+```
+
+### Environment Variables
+
+Key environment variables that need to be configured:
+
+```bash
+# Database Configuration
+DATABASE_URL=sqlite:///instance/app.db  # SQLite database path
+
+# Flask Configuration
+FLASK_APP=app.app                     # Flask application module
+FLASK_ENV=development                 # development or production
+FLASK_DEBUG=0                         # Enable debug mode (1) or disable (0)
+SECRET_KEY=your-secret-key            # Flask secret key for sessions
+
+# Email Configuration (Optional)
+MAIL_SERVER=smtp.example.com          # SMTP server
+MAIL_PORT=587                         # SMTP port
+MAIL_USE_TLS=1                        # Use TLS for email
+MAIL_USERNAME=your-email@example.com  # SMTP username
+MAIL_PASSWORD=your-password           # SMTP password
 ```
 
 ### Database Management
 
-Database migrations are automatically handled by the entrypoint script, but you can also run them manually:
+The database migration system has been consolidated into `init_migrations.py`, which handles:
+- Automatic schema migrations
+- Data backup before migrations
+- Data restoration after migrations
+- Safe handling of foreign key relationships
+
+The migration process is automatically handled on container startup, but you can also run migrations manually:
 
 ```bash
-# Create a new migration
-docker-compose -f docker-compose.dev.yml exec web flask db migrate -m "Description"
+# Run migrations manually
+docker compose exec web python init_migrations.py
 
-# Apply migrations manually
-docker-compose -f docker-compose.dev.yml exec web flask db upgrade
+# Create a new migration
+docker compose exec web flask db migrate -m "Description"
+
+# Apply migrations
+docker compose exec web flask db upgrade
 
 # Rollback migrations
-docker-compose -f docker-compose.dev.yml exec web flask db downgrade
+docker compose exec web flask db downgrade
 ```
+
+#### Migration Features
+
+The migration system provides:
+1. **Automatic Backup**: Data is automatically backed up before migrations
+2. **Safe Schema Updates**: Migrations are performed with proper foreign key handling
+3. **Data Preservation**: Existing data is restored after schema updates
+4. **Error Recovery**: Automatic rollback on failure
+5. **Comprehensive Logging**: Detailed logs for debugging
 
 ### Debugging
 
@@ -134,7 +174,7 @@ docker-compose -f docker-compose.dev.yml exec web flask db downgrade
 
 2. **Start with Debugger**:
    ```bash
-   FLASK_DEBUG=1 docker-compose -f docker-compose.dev.yml up --build
+   docker compose -f docker-compose.dev.yml up --build -e FLASK_DEBUG=1
    ```
 
 3. **Attach Debugger**: 
@@ -150,9 +190,7 @@ The Docker setup includes health checks that monitor:
 
 View health status:
 ```bash
-docker-compose ps
-# or
-docker ps
+docker compose ps
 ```
 
 ### Local Development (Without Docker)
@@ -175,7 +213,7 @@ docker ps
 
 4. Initialize the database:
    ```bash
-   python init_db.py
+   python init_migrations.py
    ```
 
 5. Run the development server:
@@ -190,36 +228,83 @@ docker ps
 - Templates use Bootstrap for styling
 - Configuration is managed through environment variables
 - All code changes are automatically reloaded in development
-- Database migrations are automatically applied on startup
+- Database migrations are handled by init_migrations.py
 - Logs are available through Docker's logging system
 
 ## Security Notes
 
-1. The Docker setup includes several security features:
+1. **Docker Security**:
    - Non-root user execution
    - No privilege escalation
    - Minimal runtime dependencies
-   - Proper file permissions
-   - Environment variable management
+   - Read-only root filesystem
+   - Limited container capabilities
+   - Resource limits enforcement
 
-2. Never commit sensitive information:
-   - Use `.env` files for local development
-   - Use secure secrets management in production
-   - Keep API keys and credentials private
+2. **Database Security**:
+   - Automatic data backup before migrations
+   - Safe schema updates with rollback capability
+   - Proper handling of foreign key relationships
+   - Secure restoration of data after migrations
+   - SQLite file permissions management
+   - Database file location security
+
+3. **Application Security**:
+   - Secure session management
+   - CSRF protection enabled
+   - XSS protection headers
+   - Secure cookie configuration
+   - Rate limiting on sensitive endpoints
+   - Input validation and sanitization
+
+4. **Environment Security**:
+   - Sensitive data in environment variables
+   - Secrets management in production
+   - No hardcoded credentials
+   - Secure configuration loading
+   - Environment-specific settings
 
 ## Troubleshooting
 
-1. **Container won't start**:
-   - Check logs: `docker-compose -f docker-compose.dev.yml logs -f web`
-   - Verify environment variables: `docker-compose -f docker-compose.dev.yml config`
-   - Check port conflicts: `netstat -ano | findstr 5001`
+### Common Issues
 
-2. **Hot reload not working**:
-   - Ensure volumes are properly mounted
-   - Check file permissions
-   - Verify FLASK_DEBUG=1 is set
+1. **Container Issues**:
+   ```bash
+   # Check container status
+   docker compose ps
+   
+   # View container logs
+   docker compose logs -f web
+   
+   # Verify network connectivity
+   docker compose exec web ping db
+   ```
 
-3. **Database issues**:
-   - Check instance folder permissions
-   - Verify DATABASE_URL in .env
-   - Review migration logs
+2. **Database Issues**:
+   ```bash
+   # Check database status
+   docker compose exec web python init_migrations.py --status
+   
+   # Reset migrations
+   docker compose exec web python init_migrations.py --reset
+   
+   # View database logs
+   docker compose logs db
+   ```
+
+3. **Permission Issues**:
+   - Ensure proper file ownership in mounted volumes
+   - Check directory permissions for SQLite database
+   - Verify user permissions in containers
+
+4. **Application Issues**:
+   - Check application logs for errors
+   - Verify environment variables are set correctly
+   - Ensure all required services are running
+
+### Getting Help
+
+- Check the [Flask Documentation](https://flask.palletsprojects.com/)
+- Review the [Flask-Migrate Documentation](https://flask-migrate.readthedocs.io/)
+- Search existing GitHub issues
+- Join the Flask community on Discord
