@@ -1,6 +1,7 @@
-from app.app import app, init_app
+from app.app import create_app
+
+# Create and initialize the app
+app = create_app()
 
 if __name__ == "__main__":
-    # Initialize the app before running
-    init_app()
     app.run()

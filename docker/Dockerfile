@@ -34,15 +34,18 @@ RUN useradd -m -u 1000 flaskuser && \
 # Copy application code
 COPY --chown=flaskuser:flaskuser . .
 
+# Fix line endings and make scripts executable
+RUN dos2unix /app/docker/docker-entrypoint.sh && \
+    chmod +x /app/docker/docker-entrypoint.sh
+
 # Switch to non-root user
 USER flaskuser
-
-# Fix line endings and make the entrypoint script executable
-RUN dos2unix /app/docker/docker-entrypoint.sh \
-    && chmod +x /app/docker/docker-entrypoint.sh
 
 # Expose port
 EXPOSE ${PORT}
 
-# Run the application
-CMD ["python", "wsgi.py"]
+# Set the entrypoint script
+ENTRYPOINT ["/app/docker/docker-entrypoint.sh"]
+
+# Default command (can be overridden by docker-compose)
+CMD ["gunicorn"]
