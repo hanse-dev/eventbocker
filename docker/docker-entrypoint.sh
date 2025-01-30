@@ -23,12 +23,29 @@ error_handler() {
 trap 'error_handler ${LINENO} $?' ERR
 
 # =================================================================
-# Database Functions
+# Main Functions
 # =================================================================
 
 handle_database() {
     log "Managing database using init_migrations.py..."
-    python3 /app/init_migrations.py
+    python init_migrations.py
+}
+
+start_production_server() {
+    log "Starting production server with gunicorn..."
+    exec gunicorn \
+        --bind "0.0.0.0:${PORT:-5001}" \
+        --workers 4 \
+        --threads 2 \
+        --timeout 60 \
+        --access-logfile - \
+        --error-logfile - \
+        "wsgi:app"
+}
+
+start_development_server() {
+    log "Starting development server..."
+    exec "$@"
 }
 
 # =================================================================
@@ -38,13 +55,20 @@ handle_database() {
 main() {
     log "Starting application initialization..."
     
-    # Handle database setup and migrations
+    # Always handle database first
     handle_database
     
-    # Start the application
-    log "Starting Flask application..."
-    exec flask run --host=0.0.0.0
+    # Check environment and start appropriate server
+    if [ "${FLASK_ENV:-production}" = "production" ]; then
+        if [ "$1" = "gunicorn" ]; then
+            start_production_server
+        else
+            exec "$@"
+        fi
+    else
+        start_development_server "$@"
+    fi
 }
 
-# Run main function
-main
+# Run main function with all script arguments
+main "$@"
