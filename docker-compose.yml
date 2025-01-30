@@ -12,7 +12,11 @@ services:
       - PORT=5001
     volumes:
       - ./instance:/app/instance:rw
-      - ./migrations:/app/migrations:rw
+      - type: bind
+        source: ./migrations
+        target: /app/migrations
+        bind:
+          create_host_path: true
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health", "||", "exit", "1"]

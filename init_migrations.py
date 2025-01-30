@@ -203,9 +203,22 @@ class MigrationManager:
                     data = None
                 
                 # Clean existing migrations
-                if os.path.exists('migrations'):
-                    logger.info("Removing existing migrations...")
-                    shutil.rmtree('migrations')
+                migrations_dir = 'migrations'
+                if os.path.exists(migrations_dir):
+                    logger.info("Cleaning existing migrations...")
+                    for root, dirs, files in os.walk(migrations_dir, topdown=False):
+                        for name in files:
+                            try:
+                                os.remove(os.path.join(root, name))
+                            except OSError as e:
+                                logger.warning(f"Could not remove file {name}: {e}")
+                        for name in dirs:
+                            try:
+                                os.rmdir(os.path.join(root, name))
+                            except OSError as e:
+                                logger.warning(f"Could not remove directory {name}: {e}")
+                else:
+                    os.makedirs(migrations_dir, exist_ok=True)
                 
                 # Initialize new migrations
                 logger.info("Initializing migrations...")
@@ -224,12 +237,18 @@ class MigrationManager:
         except Exception as e:
             logger.error(f"Migration failed: {str(e)}", exc_info=True)
             return False
-    
+
     def _run_flask_command(self, command: str) -> bool:
         """Run a Flask CLI command."""
         try:
-            os.system(f'flask {command}')
-            return True
+            with self.app.app_context():
+                if command.startswith('db '):
+                    from flask.cli import ScriptInfo
+                    from flask_migrate.cli import db
+                    info = ScriptInfo(create_app=lambda info: self.app)
+                    args = command.split()[1:]
+                    db.main(args=args, obj=info)
+                return True
         except Exception as e:
             logger.error(f"Failed to run command '{command}': {str(e)}")
             return False
