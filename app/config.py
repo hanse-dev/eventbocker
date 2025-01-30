@@ -23,13 +23,13 @@ class Config:
     
     # Email configuration
     DISABLE_EMAILS = os.environ.get('DISABLE_EMAILS', 'False').lower() == 'true'
-    MAIL_SERVER = os.environ.get('MAIL_SERVER')
-    MAIL_PORT = int(os.environ.get('MAIL_PORT'))
-    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'False').lower() == 'true'
-    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'True').lower() == 'true'
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')  # Used as default sender
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
+    
+    # Mailjet configuration
+    MAILJET_API_KEY = os.environ.get('MAILJET_API_KEY')
+    MAILJET_API_SECRET = os.environ.get('MAILJET_API_SECRET')
+    
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5001')
 
 class DevelopmentConfig(Config):

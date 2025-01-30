@@ -1,19 +1,32 @@
-from flask_mail import Mail, Message
 from flask import current_app, render_template
 from datetime import datetime
 import logging
+import os
+from mailjet_rest import Client
 
-mail = Mail()
+class EmailService:
+    _instance = None
 
-def init_mail(app):
-    """Initialize mail with app configuration"""
-    if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
-        app.logger.warning('E-Mail-Konfiguration unvollständig: MAIL_USERNAME oder MAIL_PASSWORD fehlt')
-    mail.init_app(app)
+    def __init__(self):
+        """Initialize the Mailjet client with API credentials"""
+        self.api_key = current_app.config.get('MAILJET_API_KEY') or os.environ.get('MAILJET_API_KEY')
+        self.api_secret = current_app.config.get('MAILJET_API_SECRET') or os.environ.get('MAILJET_API_SECRET')
+        
+        if not self.api_key or not self.api_secret:
+            raise ValueError('Mailjet configuration incomplete: MAILJET_API_KEY and MAILJET_API_SECRET are required')
+            
+        self.client = Client(auth=(self.api_key, self.api_secret), version='v3.1')
+
+    @classmethod
+    def get_instance(cls):
+        """Get singleton instance of EmailService"""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
 def send_email(subject, recipients, template_prefix, **template_context):
     """
-    Send an email using Flask-Mail with templates
+    Send an email using Mailjet with templates
     
     Args:
         subject (str): Email subject
@@ -25,27 +38,37 @@ def send_email(subject, recipients, template_prefix, **template_context):
     if current_app.config.get('DISABLE_EMAILS', False):
         current_app.logger.info(f"Emails disabled. Would have sent email '{subject}' to {', '.join(recipients)}")
         return
-        
-    if not current_app.config.get('MAIL_USERNAME') or not current_app.config.get('MAIL_PASSWORD'):
-        current_app.logger.error("E-Mail-Konfiguration unvollständig: MAIL_USERNAME oder MAIL_PASSWORD fehlt")
-        raise ValueError("E-Mail-Konfiguration unvollständig: MAIL_USERNAME oder MAIL_PASSWORD fehlt")
-        
+
     try:
         # Render both text and HTML versions using templates
         txt = render_template(f"email/{template_prefix}.txt", **template_context)
         html = render_template(f"email/{template_prefix}.html", **template_context)
         
-        msg = Message(
-            subject=subject,
-            recipients=recipients,
-            body=txt,
-            html=html,
-            sender=current_app.config['MAIL_USERNAME']
-        )
-        mail.send(msg)
-        current_app.logger.info(f"E-Mail erfolgreich gesendet an {', '.join(recipients)}")
+        email_service = EmailService.get_instance()
+        
+        # Prepare recipients for Mailjet format
+        recipients_data = [{"Email": email} for email in recipients]
+        
+        data = {
+            "Messages": [{
+                "From": {
+                    "Email": current_app.config['MAIL_USERNAME'],
+                    "Name": current_app.config.get('MAIL_DEFAULT_SENDER', current_app.config['MAIL_USERNAME'])
+                },
+                "To": recipients_data,
+                "Subject": subject,
+                "TextPart": txt,
+                "HTMLPart": html
+            }]
+        }
+        
+        response = email_service.client.send.create(data=data)
+        if response.status_code > 299:
+            raise Exception(f"Mailjet API error: {response.json()}")
+            
+        current_app.logger.info(f"Email successfully sent to {', '.join(recipients)}")
     except Exception as e:
-        current_app.logger.error(f"E-Mail konnte nicht gesendet werden: {str(e)}")
+        current_app.logger.error(f"Failed to send email: {str(e)}")
         raise
 
 def send_password_reset_email(user, token):

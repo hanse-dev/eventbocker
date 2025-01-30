@@ -19,7 +19,7 @@ marshmallow==3.20.1
 marshmallow-sqlalchemy==0.29.0
 
 # Email support
-Flask-Mail==0.9.1
+mailjet-rest==1.3.4
 
 # Development and debugging
 debugpy==1.8.0

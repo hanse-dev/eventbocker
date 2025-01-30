@@ -26,13 +26,23 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
+# Create non-root user
+RUN useradd -m -u 1000 flaskuser && \
+    mkdir -p /app/instance /app/migrations && \
+    chown -R flaskuser:flaskuser /app
+
 # Copy application code
-COPY . .
+COPY --chown=flaskuser:flaskuser . .
+
+# Switch to non-root user
+USER flaskuser
 
 # Fix line endings and make the entrypoint script executable
 RUN dos2unix /app/docker/docker-entrypoint.sh \
     && chmod +x /app/docker/docker-entrypoint.sh
 
-EXPOSE 5001
+# Expose port
+EXPOSE ${PORT}
 
-ENTRYPOINT ["/app/docker/docker-entrypoint.sh"]
+# Run the application
+CMD ["python", "wsgi.py"]

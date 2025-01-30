@@ -3,7 +3,6 @@ from .config import Config
 from .extensions import db, login_manager, migrate
 from .commands import create_admin, init_db
 from .database import init_database
-from .utils.email import mail
 import os
 import logging
 
@@ -16,7 +15,6 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    mail.init_app(app)
     
     # Register blueprints
     from .routes.main import bp as main_bp
