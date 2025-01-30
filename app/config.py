@@ -1,19 +1,37 @@
+"""
+Configuration Module
+
+This module defines different configuration classes for various environments
+(development, production, testing). It uses environment variables for sensitive
+data and provides sensible defaults for development.
+
+The configuration hierarchy is:
+- Config (base class with common settings)
+- DevelopmentConfig (for development environment)
+- ProductionConfig (for production environment)
+- TestConfig (for testing environment)
+"""
+
 import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
+# This allows for easy configuration management across different environments
 load_dotenv()
 
 class Config:
-    """Application configuration class."""
+    """
+    Base configuration class containing settings common to all environments.
+    Uses environment variables with sensible defaults for development.
+    """
     # Flask configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev')  # Used for session security
     
     # SQLAlchemy configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///instance/data.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_TRACK_MODIFICATIONS = False  # Disable SQLAlchemy event system (performance)
     
-    # Admin credentials
+    # Admin credentials (should be changed in production)
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin')
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', '')
@@ -33,16 +51,36 @@ class Config:
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5001')
 
 class DevelopmentConfig(Config):
-    """Development configuration."""
+    """
+    Development configuration with debugging enabled.
+    Inherits from base Config class.
+    """
     DEBUG = True
     
 class ProductionConfig(Config):
-    """Production configuration."""
+    """
+    Production configuration with secure settings.
+    Inherits from base Config class.
+    Should have DEBUG disabled and use secure values for sensitive settings.
+    """
     DEBUG = False
 
-# Set default configuration
+class TestConfig(Config):
+    """
+    Test configuration for running unit tests.
+    Uses in-memory SQLite database and test-specific settings.
+    """
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'  # Use in-memory database for testing
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = 'test-secret-key'
+    JWT_SECRET_KEY = 'jwt-test-secret-key'
+    MAIL_SUPPRESS_SEND = True  # Prevent sending actual emails during tests
+
+# Configuration dictionary for easy access to different configs
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'test': TestConfig,
     'default': DevelopmentConfig
 }
