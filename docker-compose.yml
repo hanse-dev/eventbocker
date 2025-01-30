@@ -11,9 +11,8 @@ services:
       - DATABASE_URL=sqlite:////app/instance/data.db
       - PORT=5001
     volumes:
-      - ./instance:/app/instance
-      - ./migrations:/app/migrations
-    user: "${UID:-1000}:${GID:-1000}"
+      - ./instance:/app/instance:rw
+      - ./migrations:/app/migrations:rw
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
