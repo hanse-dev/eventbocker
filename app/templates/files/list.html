@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Downloads</h2>
+                {% if is_admin %}
+                <div class="upload-section">
+                    <form action="{{ url_for('files.upload_file') }}" method="post" enctype="multipart/form-data" class="d-inline">
+                        <input type="file" name="file" class="form-control d-none" id="fileInput" onchange="this.form.submit()">
+                        <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            <i class="bi bi-upload"></i> Upload Files
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Size</th>
+                                    <th>Modified</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if files %}
+                                    {% for file in files %}
+                                        <tr>
+                                            <td>{{ file.name }}</td>
+                                            <td>{{ file.size }}</td>
+                                            <td>{{ file.modified }}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{{ url_for('files.download_file', filename=file.name) }}" 
+                                                       class="btn btn-sm btn-primary">
+                                                        <i class="bi bi-download"></i> Download
+                                                    </a>
+                                                    {% if is_admin %}
+                                                        <form action="{{ url_for('files.delete_file_route', filename=file.name) }}" 
+                                                              method="post" 
+                                                              class="d-inline"
+                                                              onsubmit="return confirm('Are you sure you want to delete {{ file.name }}?');">
+                                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No files available</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end mt-3">
+                <form action="{{ url_for('files.file_list_page') }}" method="get" class="d-inline">
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh List
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.btn-group {
+    display: flex;
+    gap: 0.5rem;
+}
+.btn-group form {
+    margin: 0;
+}
+</style>
+{% endblock %}
