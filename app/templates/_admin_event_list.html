@@ -57,6 +57,11 @@
                            title="Teilnehmer">
                             <i class="bi bi-people"></i>
                         </a>
+                        <a href="{{ url_for('main.export_registrations', event_id=event.id) }}" 
+                           class="btn btn-sm btn-outline-success px-2"
+                           title="Anmeldungen exportieren">
+                            <i class="bi bi-file-excel"></i>
+                        </a>
                         <form action="{{ url_for('main.toggle_visibility', event_id=event.id) }}" method="POST">
                             <button type="submit" class="btn btn-sm btn-outline-secondary px-2" 
                                     title="{% if event.is_visible %}Verstecken{% else %}Zeigen{% endif %}">

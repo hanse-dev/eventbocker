@@ -9,6 +9,11 @@
     </p>
 
     {% if bookings %}
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{ url_for('main.export_registrations', event_id=event.id) }}" class="btn btn-success">
+            <i class="fas fa-file-excel"></i> Als Excel exportieren
+        </a>
+    </div>
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>

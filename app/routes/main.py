@@ -1,10 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app, send_file
 from flask_login import login_required, current_user
 from ..models.models import Event, Booking, db
 from datetime import datetime, timezone
 from sqlalchemy import text
 from ..utils.email import send_event_registration_confirmation, send_admin_registration_notification
 import traceback
+import io
+from openpyxl import Workbook
 
 bp = Blueprint('main', __name__)
 
@@ -243,6 +245,50 @@ def view_registrations(event_id):
     event = Event.query.get_or_404(event_id)
     bookings = Booking.query.filter_by(event_id=event_id).order_by(Booking.created_at.desc()).all()
     return render_template('registrations.html', event=event, bookings=bookings)
+
+@bp.route('/event/<int:event_id>/export')
+@login_required
+def export_registrations(event_id):
+    """Export event registrations as Excel file."""
+    # Ensure user is admin
+    if not current_user.is_admin:
+        flash('Zugriff verweigert. Sie benötigen Administratorrechte.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    event = Event.query.get_or_404(event_id)
+    bookings = Booking.query.filter_by(event_id=event_id).order_by(Booking.created_at.desc()).all()
+    
+    # Create a workbook and select the active worksheet
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Registrierungen"
+    
+    # Add headers
+    headers = ["Name", "Telefonnummer", "E-Mail"]
+    for col_num, header in enumerate(headers, 1):
+        worksheet.cell(row=1, column=col_num, value=header)
+    
+    # Add data
+    for row_num, booking in enumerate(bookings, 2):
+        worksheet.cell(row=row_num, column=1, value=booking.name)
+        worksheet.cell(row=row_num, column=2, value=booking.phone)
+        worksheet.cell(row=row_num, column=3, value=booking.email)
+    
+    # Create a BytesIO object to store the Excel file
+    excel_file = io.BytesIO()
+    workbook.save(excel_file)
+    excel_file.seek(0)
+    
+    # Generate a filename with the event date in YYYY-MM-DD format
+    event_date_str = event.date.strftime('%Y-%m-%d')
+    filename = f"{event_date_str}-Anmeldungen.xlsx"
+    
+    return send_file(
+        excel_file,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @bp.route('/booking/<int:booking_id>/delete', methods=['POST'])
 @login_required
