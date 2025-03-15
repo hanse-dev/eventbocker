@@ -341,16 +341,81 @@ def health_check():
     try:
         # Check database connection
         db.session.execute(text('SELECT 1'))
+        
+        # Return success response
         return jsonify({
             'status': 'healthy',
             'database': 'connected',
-            'timestamp': datetime.now(timezone.utc).isoformat()
+            'timestamp': datetime.now().isoformat()
         }), 200
     except Exception as e:
-        current_app.logger.error(f"Fehler bei der Überprüfung der Gesundheit: {str(e)}\n{traceback.format_exc()}")
+        current_app.logger.error(f"Health check failed: {str(e)}")
         return jsonify({
             'status': 'unhealthy',
-            'database': 'disconnected',
             'error': str(e),
-            'timestamp': datetime.now(timezone.utc).isoformat()
-        }), 503
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+@bp.route('/admin/check-reminders')
+@login_required
+def check_reminders():
+    """Manually trigger reminder check (admin only)."""
+    if not current_user.is_admin:
+        flash('Sie haben keine Berechtigung für diese Aktion.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    try:
+        from ..utils.scheduler import schedule_event_reminders
+        schedule_event_reminders(current_app._get_current_object())
+        flash('Erinnerungsprüfung wurde erfolgreich ausgeführt.', 'success')
+    except Exception as e:
+        current_app.logger.error(f"Error checking reminders: {str(e)}")
+        flash(f'Fehler bei der Erinnerungsprüfung: {str(e)}', 'danger')
+    
+    return redirect(url_for('main.index'))
+
+@bp.route('/admin/reminders/status')
+@login_required
+def reminder_status():
+    """Get the current status of the reminder system (admin only)."""
+    if not current_user.is_admin:
+        flash('Sie haben keine Berechtigung für diese Aktion.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    try:
+        from ..utils.scheduler import get_scheduler_status
+        status = get_scheduler_status()
+        return render_template('reminder_status.html', status=status)
+    except Exception as e:
+        current_app.logger.error(f"Error getting reminder status: {str(e)}")
+        flash(f'Fehler beim Abrufen des Erinnerungsstatus: {str(e)}', 'danger')
+        return redirect(url_for('main.index'))
+
+@bp.route('/admin/reminders/toggle', methods=['POST'])
+@login_required
+def toggle_reminders():
+    """Toggle the reminder system on/off (admin only)."""
+    if not current_user.is_admin:
+        flash('Sie haben keine Berechtigung für diese Aktion.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    try:
+        # Get current setting
+        current_setting = current_app.config.get('ENABLE_REMINDERS', True)
+        
+        # Toggle setting
+        new_setting = not current_setting
+        current_app.config['ENABLE_REMINDERS'] = new_setting
+        
+        # Update environment variable for persistence across restarts
+        # Note: This doesn't modify the .env file, just the current process environment
+        import os
+        os.environ['ENABLE_REMINDERS'] = str(new_setting)
+        
+        status = "aktiviert" if new_setting else "deaktiviert"
+        flash(f'Erinnerungen wurden {status}.', 'success')
+    except Exception as e:
+        current_app.logger.error(f"Error toggling reminders: {str(e)}")
+        flash(f'Fehler beim Umschalten der Erinnerungen: {str(e)}', 'danger')
+    
+    return redirect(url_for('main.reminder_status'))

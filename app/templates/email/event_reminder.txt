@@ -1,0 +1,20 @@
+Erinnerung an Ihre Veranstaltung
+=============================
+
+Hallo,
+
+wir möchten Sie daran erinnern, dass Sie für folgende Veranstaltung angemeldet sind, die morgen stattfindet:
+
+{{ event.title }}
+Datum: {{ event.date.strftime('%d.%m.%Y') }}
+Uhrzeit: {{ event.date.strftime('%H:%M') }} Uhr
+{% if event.room %}Raum: {{ event.room }}{% endif %}
+{% if event.address %}Adresse: {{ event.address }}{% endif %}
+
+Wir freuen uns auf Ihre Teilnahme!
+
+Mit freundlichen Grüßen,
+Ihr Eventbocker-Team
+
+---
+Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht auf diese E-Mail.

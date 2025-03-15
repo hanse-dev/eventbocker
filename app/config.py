@@ -30,6 +30,9 @@ class Config:
     MAILJET_API_KEY = os.environ.get('MAILJET_API_KEY')
     MAILJET_API_SECRET = os.environ.get('MAILJET_API_SECRET')
     
+    # Reminder configuration
+    ENABLE_REMINDERS = os.environ.get('ENABLE_REMINDERS', 'True').lower() == 'true'
+    
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5001')
 
 class DevelopmentConfig(Config):

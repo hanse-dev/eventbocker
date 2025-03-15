@@ -125,3 +125,19 @@ def send_admin_registration_notification(event, user):
         event=event,
         user=user
     )
+
+def send_event_reminder(user_email, event):
+    """
+    Send a reminder email to a registered participant one day before the event
+    
+    Args:
+        user_email (str): Email address of the registered user
+        event (Event): Event object containing event details
+    """
+    subject = f"Erinnerung: Morgen findet statt - {event.title}"
+    send_email(
+        subject=subject,
+        recipients=[user_email],
+        template_prefix='event_reminder',
+        event=event
+    )

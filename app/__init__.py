@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
+import logging
 
 # Initialize Flask extensions
 db = SQLAlchemy()
@@ -42,5 +43,14 @@ def create_app(init_db=True):
         if init_db:
             from .database import init_database
             init_database()
+            
+        # Initialize scheduler for reminder emails
+        if not app.config.get('TESTING', False):
+            try:
+                from .utils.scheduler import init_scheduler
+                scheduler = init_scheduler(app)
+                app.logger.info("Scheduler initialized successfully")
+            except Exception as e:
+                app.logger.error(f"Failed to initialize scheduler: {str(e)}")
 
     return app
