@@ -21,11 +21,17 @@ def create_app():
     from .routes.auth import bp as auth_bp
     from .routes.events import bp as events_bp
     from .routes.bookings import bp as bookings_bp
+    from .routes.files import bp as files_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(events_bp)
     app.register_blueprint(bookings_bp)
+    app.register_blueprint(files_bp)
+
+    # Configure upload directory
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.instance_path, 'uploads')
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     # Set up user loader for Flask-Login
     @login_manager.user_loader
