@@ -22,12 +22,14 @@ def create_app():
     from .routes.events import bp as events_bp
     from .routes.bookings import bp as bookings_bp
     from .routes.files import bp as files_bp
+    from .routes.config import bp as config_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(events_bp)
     app.register_blueprint(bookings_bp)
     app.register_blueprint(files_bp)
+    app.register_blueprint(config_bp)
 
     # Configure upload directory
     app.config['UPLOAD_FOLDER'] = os.path.join(app.instance_path, 'uploads')

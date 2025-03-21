@@ -1,0 +1,18 @@
+{
+  "website": {
+    "name": "Veranstaltungsmanager",
+    "title": "Veranstaltungsverwaltung",
+    "description": "Plattform zur Verwaltung von Veranstaltungen und Buchungen",
+    "welcome_heading": "Willkommen beim Veranstaltungsmanager",
+    "welcome_text": "Durchstöber und buche eine kommende Veranstaltung"
+  },
+  "contact": {
+    "email": "",
+    "phone": ""
+  },
+  "appearance": {
+    "primary_color": "#212529",
+    "secondary_color": "#ffffff",
+    "logo_icon": "bi-calendar-event"
+  }
+}

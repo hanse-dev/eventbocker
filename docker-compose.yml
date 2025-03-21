@@ -12,6 +12,7 @@ services:
       - PORT=5001
     volumes:
       - ./instance:/app/instance:rw
+      - ./config.json:/app/config.json:rw
       - type: bind
         source: ./migrations
         target: /app/migrations
