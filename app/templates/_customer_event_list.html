@@ -1,5 +1,5 @@
 {% macro customer_event_list(events) %}
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 g-md-4">
     {% for event in events %}
     <div class="col">
         <div class="card h-100">
@@ -7,7 +7,7 @@
                 <h5 class="card-title">{{ event.title }}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">{{ event.date.strftime('%d.%m.%Y %H:%M') }}</h6>
                 {% if event.description %}
-                <p class="card-text">{{ event.description }}</p>
+                <p class="card-text small">{{ event.description }}</p>
                 {% endif %}
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
@@ -23,7 +23,7 @@
                 </div>
                 {% if event.room or event.address %}
                 <p class="card-text">
-                    <small class="text-muted">
+                    <small class="text-muted text-truncate d-inline-block w-100">
                         {% if event.room %}{{ event.room }}{% endif %}
                         {% if event.room and event.address %}, {% endif %}
                         {% if event.address %}{{ event.address }}{% endif %}

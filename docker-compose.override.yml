@@ -19,4 +19,4 @@ services:
       - DATABASE_URL=sqlite:////app/instance/data.db
       - PYTHONBREAKPOINT=debugpy.breakpoint
     entrypoint: []
-    command: ["flask", "run", "--host", "0.0.0.0", "--port", "5001", "--no-debugger"]
+    command: ["flask", "run", "--host", "0.0.0.0", "--port", "5001", "--no-debugger", "--reload"]

@@ -6,8 +6,8 @@
 {% if current_user.is_authenticated and current_user.is_admin %}
 <div class="row mb-4">
     <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <h1 class="h3 mb-0">Event Management</h1>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h3 class="mb-0">Event Management</h3>
             <a href="{{ url_for('main.create_event') }}" class="btn btn-primary">
                 <i class="bi bi-plus-lg"></i> Neue Veranstaltung
             </a>
@@ -34,7 +34,7 @@
     </div>
 
     <div class="tab-pane fade" id="customer-view" role="tabpanel" aria-labelledby="customer-tab">
-        <h2 class="h3 mb-4">Kommende Veranstaltungen</h2>
+        <h3 class="mb-4">Kommende Veranstaltungen</h3>
         {{ customer_event_list(events) }}
     </div>
 </div>
@@ -43,13 +43,13 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="px-4 py-5 text-center">
-            <h1 class="display-5 fw-bold mb-3">Willkommen bei Event Management</h1>
+            <h3 class="fw-bold mb-3">Willkommen bei Event Management</h3>
             <p class="lead mb-0">Durchstöbern und buchen Sie kommende Veranstaltungen.</p>
         </div>
     </div>
 </div>
 
-<h2 class="h3 mb-4">Kommende Veranstaltungen</h2>
+<h3 class="mb-4">Kommende Veranstaltungen</h3>
 {{ customer_event_list(events) }}
 {% endif %}
 {% endblock %}

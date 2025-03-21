@@ -8,12 +8,18 @@
         <strong>Anmeldungen:</strong> {{ bookings|length }} / {{ event.capacity }}
     </p>
 
-    {% if bookings %}
-    <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+        {% if bookings %}
         <a href="{{ url_for('main.export_registrations', event_id=event.id) }}" class="btn btn-success">
-            <i class="fas fa-file-excel"></i> Als Excel exportieren
+            <i class="bi bi-file-excel"></i> Als Excel exportieren
         </a>
+        {% else %}
+        <div></div>
+        {% endif %}
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Zurück</a>
     </div>
+
+    {% if bookings %}
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>
@@ -47,7 +53,5 @@
     {% else %}
     <p>Noch keine Anmeldungen für diese Veranstaltung.</p>
     {% endif %}
-
-    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Zurück</a>
 </div>
 {% endblock %}
