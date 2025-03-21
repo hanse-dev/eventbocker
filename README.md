@@ -117,6 +117,53 @@ MAIL_USERNAME=your-email@example.com  # SMTP username
 MAIL_PASSWORD=your-password           # SMTP password
 ```
 
+### Website Configuration
+
+The application uses a JSON configuration file (`config.json`) to customize the website appearance and content:
+
+```json
+{
+  "website": {
+    "name": "Veranstaltungsmanager",
+    "title": "Veranstaltungsverwaltung",
+    "description": "Plattform zur Verwaltung von Veranstaltungen und Buchungen"
+  },
+  "contact": {
+    "email": "",
+    "phone": ""
+  },
+  "appearance": {
+    "primary_color": "#212529",
+    "secondary_color": "#6c757d",
+    "logo_icon": "bi-calendar-event"
+  }
+}
+```
+
+#### Configuration Options:
+
+- **website.name**: The name displayed in the navigation bar
+- **website.title**: The title displayed in the browser tab
+- **website.description**: A brief description of the website (for SEO)
+- **contact.email**: Contact email address
+- **contact.phone**: Contact phone number
+- **appearance.primary_color**: Primary color for the website (hex code)
+- **appearance.secondary_color**: Secondary color for the website (hex code)
+- **appearance.logo_icon**: Bootstrap icon class for the logo (see [Bootstrap Icons](https://icons.getbootstrap.com/))
+
+#### Editing Configuration:
+
+1. **Through the Admin Interface**: 
+   - Log in as an admin user
+   - Click on the "Konfiguration" link in the navigation menu
+   - Make your changes and save
+
+2. **Manually**:
+   - Edit the `config.json` file directly
+   - Restart the application for changes to take effect
+
+When using Docker, the configuration file is automatically mounted as a volume, so changes persist between container restarts.
+
 ### Database Management
 
 The database migration system has been consolidated into `init_migrations.py`, which handles:
