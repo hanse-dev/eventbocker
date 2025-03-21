@@ -1,6 +1,6 @@
 {
   "website": {
-    "name": "Veranstaltungsmanager",
+    "name": "Nada",
     "title": "Veranstaltungsverwaltung",
     "description": "Plattform zur Verwaltung von Veranstaltungen und Buchungen",
     "welcome_heading": "Willkommen beim Veranstaltungsmanager",
@@ -11,8 +11,10 @@
     "phone": ""
   },
   "appearance": {
-    "primary_color": "#212529",
+    "primary_color": "#000000",
     "secondary_color": "#ffffff",
+    "button_color": "#0080ff",
     "logo_icon": "bi-calendar-event"
-  }
+  },
+  "_last_modified": 1742569534.7857184
 }
