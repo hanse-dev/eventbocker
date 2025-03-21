@@ -104,43 +104,7 @@
                 <div class="card mt-4">
                     <div class="card-header">Farbvorschau</div>
                     <div class="card-body">
-                        <style>
-                            .preview-navbar {
-                                background-color: {{ json_config.appearance.primary_color }};
-                                padding: 10px;
-                                border-radius: 5px;
-                                margin-bottom: 10px;
-                            }
-
-                            .preview-brand {
-                                color: {{ json_config.appearance.secondary_color }};
-                                font-weight: bold;
-                            }
-
-                            .preview-link {
-                                color: rgba(255, 255, 255, 0.7);
-                                margin-right: 10px;
-                            }
-
-                            .preview-link-active {
-                                color: {{ json_config.appearance.secondary_color }};
-                                margin-right: 10px;
-                            }
-
-                            .preview-heading {
-                                color: {{ json_config.appearance.primary_color }};
-                                margin: 10px 0;
-                            }
-
-                            .preview-button {
-                                background-color: {{ json_config.appearance.button_color }};
-                                color: white;
-                                border: none;
-                                padding: 5px 10px;
-                                border-radius: 5px;
-                            }
-                        </style>
-                        <div class="d-flex align-items-center mb-2 preview-navbar">
+                        <div class="preview-navbar">
                             <i class="bi {{ json_config.appearance.logo_icon }} me-2"></i>
                             <span class="preview-brand">{{ json_config.website.name }}</span>
                             <span class="preview-link">Inaktiver Link</span>
@@ -150,6 +114,52 @@
                         <button class="preview-button">Button in Button-Farbe</button>
                     </div>
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Apply styles dynamically to avoid CSS linting errors with Jinja variables
+                        const previewNavbar = document.querySelector('.preview-navbar');
+                        if (previewNavbar) {
+                            previewNavbar.style.backgroundColor = '{{ json_config.appearance.primary_color }}';
+                            previewNavbar.style.padding = '10px';
+                            previewNavbar.style.borderRadius = '5px';
+                            previewNavbar.style.marginBottom = '10px';
+                        }
+
+                        const previewBrand = document.querySelector('.preview-brand');
+                        if (previewBrand) {
+                            previewBrand.style.color = '{{ json_config.appearance.secondary_color }}';
+                            previewBrand.style.fontWeight = 'bold';
+                        }
+
+                        const previewLinks = document.querySelectorAll('.preview-link');
+                        previewLinks.forEach(link => {
+                            link.style.color = 'rgba(255, 255, 255, 0.7)';
+                            link.style.marginRight = '10px';
+                        });
+
+                        const previewActiveLinks = document.querySelectorAll('.preview-link-active');
+                        previewActiveLinks.forEach(link => {
+                            link.style.color = '{{ json_config.appearance.secondary_color }}';
+                            link.style.marginRight = '10px';
+                        });
+
+                        const previewHeading = document.querySelector('.preview-heading');
+                        if (previewHeading) {
+                            previewHeading.style.color = '{{ json_config.appearance.primary_color }}';
+                            previewHeading.style.margin = '10px 0';
+                        }
+
+                        const previewButton = document.querySelector('.preview-button');
+                        if (previewButton) {
+                            previewButton.style.backgroundColor = '{{ json_config.appearance.button_color }}';
+                            previewButton.style.color = 'white';
+                            previewButton.style.border = 'none';
+                            previewButton.style.padding = '5px 10px';
+                            previewButton.style.borderRadius = '5px';
+                        }
+                    });
+                </script>
             </div>
         </div>
         
@@ -158,22 +168,5 @@
             <button type="submit" class="btn btn-primary">Konfiguration speichern</button>
         </div>
     </form>
-    
-    <div class="mt-4">
-        <div class="alert alert-info">
-            <h5>Hinweis zur Konfiguration</h5>
-            <p>Die Konfiguration wird automatisch neu geladen, wenn Sie Änderungen speichern. 
-               Falls Sie die Konfigurationsdatei manuell bearbeitet haben, können Sie die Konfiguration 
-               ohne Neustart des Servers neu laden.</p>
-            <div class="d-flex gap-2 mt-2">
-                <a href="{{ url_for('config.reload_configuration') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-arrow-clockwise"></i> Konfiguration neu laden
-                </a>
-                <a href="{{ url_for('config.debug_config') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-bug"></i> Konfiguration debuggen
-                </a>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
