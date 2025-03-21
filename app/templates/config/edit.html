@@ -82,14 +82,73 @@
                 
                 <div class="mb-3">
                     <label for="primary_color" class="form-label">Primäre Farbe</label>
+                    <small class="form-text text-muted d-block mb-2">Wird für die Navigationsleiste, Überschriften und Buttons verwendet.</small>
                     <input type="color" class="form-control form-control-color" id="primary_color" name="primary_color" 
                            value="{{ json_config.appearance.primary_color }}" title="Primäre Farbe auswählen">
                 </div>
                 
                 <div class="mb-3">
                     <label for="secondary_color" class="form-label">Sekundäre Farbe</label>
+                    <small class="form-text text-muted d-block mb-2">Wird für den Website-Namen und aktive Navigationslinks verwendet.</small>
                     <input type="color" class="form-control form-control-color" id="secondary_color" name="secondary_color" 
                            value="{{ json_config.appearance.secondary_color }}" title="Sekundäre Farbe auswählen">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="button_color" class="form-label">Button-Farbe</label>
+                    <small class="form-text text-muted d-block mb-2">Wird für alle Buttons auf der Website verwendet.</small>
+                    <input type="color" class="form-control form-control-color" id="button_color" name="button_color" 
+                           value="{{ json_config.appearance.button_color }}" title="Button-Farbe auswählen">
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">Farbvorschau</div>
+                    <div class="card-body">
+                        <style>
+                            .preview-navbar {
+                                background-color: {{ json_config.appearance.primary_color }};
+                                padding: 10px;
+                                border-radius: 5px;
+                                margin-bottom: 10px;
+                            }
+
+                            .preview-brand {
+                                color: {{ json_config.appearance.secondary_color }};
+                                font-weight: bold;
+                            }
+
+                            .preview-link {
+                                color: rgba(255, 255, 255, 0.7);
+                                margin-right: 10px;
+                            }
+
+                            .preview-link-active {
+                                color: {{ json_config.appearance.secondary_color }};
+                                margin-right: 10px;
+                            }
+
+                            .preview-heading {
+                                color: {{ json_config.appearance.primary_color }};
+                                margin: 10px 0;
+                            }
+
+                            .preview-button {
+                                background-color: {{ json_config.appearance.button_color }};
+                                color: white;
+                                border: none;
+                                padding: 5px 10px;
+                                border-radius: 5px;
+                            }
+                        </style>
+                        <div class="d-flex align-items-center mb-2 preview-navbar">
+                            <i class="bi {{ json_config.appearance.logo_icon }} me-2"></i>
+                            <span class="preview-brand">{{ json_config.website.name }}</span>
+                            <span class="preview-link">Inaktiver Link</span>
+                            <span class="preview-link-active">Aktiver Link</span>
+                        </div>
+                        <div class="preview-heading">Überschrift in primärer Farbe</div>
+                        <button class="preview-button">Button in Button-Farbe</button>
+                    </div>
                 </div>
             </div>
         </div>

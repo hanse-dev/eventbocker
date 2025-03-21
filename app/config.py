@@ -38,6 +38,7 @@ def load_json_config():
                 "appearance": {
                     "primary_color": "#212529",
                     "secondary_color": "#6c757d",
+                    "button_color": "#0080ff",
                     "logo_icon": "bi-calendar-event"
                 },
                 "_last_modified": time.time()
@@ -73,6 +74,7 @@ def reload_config():
             current_app.config['CONTACT_PHONE'] = json_config.get('contact', {}).get('phone', '')
             current_app.config['PRIMARY_COLOR'] = json_config.get('appearance', {}).get('primary_color', '#212529')
             current_app.config['SECONDARY_COLOR'] = json_config.get('appearance', {}).get('secondary_color', '#6c757d')
+            current_app.config['BUTTON_COLOR'] = json_config.get('appearance', {}).get('button_color', '#0080ff')
             current_app.config['LOGO_ICON'] = json_config.get('appearance', {}).get('logo_icon', 'bi-calendar-event')
             
             current_app.logger.info(f"Configuration reloaded successfully from {config_path}")
@@ -127,6 +129,7 @@ class Config:
     # Appearance settings
     PRIMARY_COLOR = json_config.get('appearance', {}).get('primary_color', '#212529')
     SECONDARY_COLOR = json_config.get('appearance', {}).get('secondary_color', '#6c757d')
+    BUTTON_COLOR = json_config.get('appearance', {}).get('button_color', '#0080ff')
     LOGO_ICON = json_config.get('appearance', {}).get('logo_icon', 'bi-calendar-event')
 
 class DevelopmentConfig(Config):

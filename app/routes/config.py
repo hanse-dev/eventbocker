@@ -36,6 +36,7 @@ def edit_config():
             # Update appearance settings
             current_config['appearance']['primary_color'] = request.form.get('primary_color', '#212529')
             current_config['appearance']['secondary_color'] = request.form.get('secondary_color', '#6c757d')
+            current_config['appearance']['button_color'] = request.form.get('button_color', '#0080ff')
             current_config['appearance']['logo_icon'] = request.form.get('logo_icon', 'bi-calendar-event')
             
             # Update last modified timestamp
@@ -118,6 +119,7 @@ def debug_config():
         'CONTACT_PHONE': current_app.config.get('CONTACT_PHONE'),
         'PRIMARY_COLOR': current_app.config.get('PRIMARY_COLOR'),
         'SECONDARY_COLOR': current_app.config.get('SECONDARY_COLOR'),
+        'BUTTON_COLOR': current_app.config.get('BUTTON_COLOR'),
         'LOGO_ICON': current_app.config.get('LOGO_ICON')
     }
     

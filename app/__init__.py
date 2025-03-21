@@ -29,6 +29,7 @@ def create_app(test_config=None, init_db=True):
     app.config['CONTACT_PHONE'] = json_config.get('contact', {}).get('phone', '')
     app.config['PRIMARY_COLOR'] = json_config.get('appearance', {}).get('primary_color', '#212529')
     app.config['SECONDARY_COLOR'] = json_config.get('appearance', {}).get('secondary_color', '#ffffff')
+    app.config['BUTTON_COLOR'] = json_config.get('appearance', {}).get('button_color', '#0080ff')
     app.config['LOGO_ICON'] = json_config.get('appearance', {}).get('logo_icon', 'bi-calendar-event')
     
     # Load configuration based on environment
