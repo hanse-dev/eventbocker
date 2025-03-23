@@ -18,26 +18,231 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ url_for('main.book_event', event_id=event.id) }}">
-            <div class="mb-3">
-                <label for="name" class="form-label">Ihr Name</label>
-                <input type="text" class="form-control" id="name" name="name" required>
+        <div id="registration-container">
+            <!-- Initial registration form -->
+            <div id="initial-registration-form" {% if request.args.get('success') == 'true' %}style="display: none;"{% endif %}>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            {% if category != 'success' or request.args.get('success') != 'true' %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" action="{{ url_for('main.book_event', event_id=event.id) }}" id="booking-form">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Ihr Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-Mail</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Telefonnummer</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required 
+                            pattern="[0-9\s\+\-]+" title="Bitte geben Sie eine gültige Telefonnummer ein">
+                        <div class="form-text">Format: +49 123 4567890</div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button type="submit" class="btn btn-primary" id="book-button">Jetzt buchen</button>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Abbrechen</a>
+                    </div>
+                </form>
             </div>
-            <div class="mb-3">
-                <label for="email" class="form-label">E-Mail</label>
-                <input type="email" class="form-control" id="email" name="email" required>
+            
+            <!-- Success message and additional registration option (initially hidden) -->
+            <div id="registration-success" class="mt-4" {% if request.args.get('success') != 'true' %}style="display: none;"{% endif %}>
+                <div class="alert alert-success">
+                    <h5>Buchung erfolgreich!</h5>
+                    <p>Wir haben Sie für die Veranstaltung gebucht.</p>
+                    <p id="registration-count" class="mt-2 mb-0">Anzahl der Anmeldungen für diese Veranstaltung: <strong>1</strong></p>
+                    
+                    <div class="mt-3">
+                        <p class="mb-2"><strong>Möchten Sie eine weitere Person für diese Veranstaltung anmelden?</strong></p>
+                        <button id="register-another-btn" class="btn btn-primary btn-sm">Weitere Person anmelden</button>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary btn-sm">Zurück zur Übersicht</a>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="phone" class="form-label">Telefonnummer</label>
-                <input type="tel" class="form-control" id="phone" name="phone" required 
-                       pattern="[0-9\s\+\-]+" title="Bitte geben Sie eine gültige Telefonnummer ein">
-                <div class="form-text">Format: +49 123 4567890</div>
+            
+            <!-- Additional person registration form (initially hidden) -->
+            <div id="additional-registration-form" style="display: none;">
+                <h4 class="mb-3">Weitere Person anmelden</h4>
+                <form method="POST" action="{{ url_for('main.book_event', event_id=event.id) }}" id="additional-booking-form">
+                    <div class="mb-3">
+                        <label for="additional-name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="additional-name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="additional-email" class="form-label">E-Mail</label>
+                        <input type="email" class="form-control" id="additional-email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="additional-phone" class="form-label">Telefonnummer</label>
+                        <input type="tel" class="form-control" id="additional-phone" name="phone" required 
+                            pattern="[0-9\s\+\-]+" title="Bitte geben Sie eine gültige Telefonnummer ein">
+                        <div class="form-text">Format: +49 123 4567890</div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button type="submit" class="btn btn-primary" id="additional-book-button">Jetzt buchen</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-additional-btn">Abbrechen</button>
+                    </div>
+                </form>
             </div>
-            <div class="d-grid gap-2 d-md-flex">
-                <button type="submit" class="btn btn-primary">Jetzt buchen</button>
-                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Abbrechen</a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const bookingForm = document.getElementById('booking-form');
+        const additionalBookingForm = document.getElementById('additional-booking-form');
+        const initialRegistrationForm = document.getElementById('initial-registration-form');
+        const registrationSuccess = document.getElementById('registration-success');
+        const additionalRegistrationForm = document.getElementById('additional-registration-form');
+        const registerAnotherBtn = document.getElementById('register-another-btn');
+        const cancelAdditionalBtn = document.getElementById('cancel-additional-btn');
+        const bookButton = document.getElementById('book-button');
+        const additionalBookButton = document.getElementById('additional-book-button');
+        const registrationCountElement = document.getElementById('registration-count');
+        
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            const results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+        
+        // Get the event ID directly from the template
+        const eventId = "{{ event.id }}";
+        console.log(`Using event ID: ${eventId}`);
+        
+        // Initialize or update registration counter
+        function updateRegistrationCount() {
+            // Only run on success pages
+            if (getUrlParameter('success') !== 'true') return;
+            
+            // Create a unique key for this event's registration count
+            const countKey = `eventRegistrationCount_${eventId}`;
+            console.log(`Using localStorage key: ${countKey}`);
+            
+            // Get the current count or initialize to 0
+            let count = parseInt(localStorage.getItem(countKey) || '0');
+            console.log(`Current count from localStorage: ${count}`);
+            
+            // If this is a fresh page load with success=true, increment the counter
+            const hasIncrementedKey = `hasIncremented_${eventId}_${Date.now()}`;
+            if (!sessionStorage.getItem(hasIncrementedKey)) {
+                count++;
+                localStorage.setItem(countKey, count.toString());
+                sessionStorage.setItem(hasIncrementedKey, 'true');
+                console.log(`Counter incremented to ${count} for event ${eventId}`);
+            }
+            
+            // Update the display
+            if (registrationCountElement) {
+                registrationCountElement.innerHTML = `Anzahl der Anmeldungen für diese Veranstaltung: <strong>${count}</strong>`;
+                console.log(`Counter display updated to ${count} for event ${eventId}`);
+            }
+        }
+        
+        // Call the function on page load
+        updateRegistrationCount();
+        
+        // Debug output
+        console.log(`Event ID: ${eventId}`);
+        console.log(`Success parameter: ${getUrlParameter('success')}`);
+        
+        // Restore form data from previous submission if available
+        if (getUrlParameter('success') === 'true') {
+            // Try to get saved form data from localStorage
+            const savedData = localStorage.getItem('lastBookingData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                
+                // Pre-fill the additional registration form with the same data
+                document.getElementById('additional-name').value = formData.name || '';
+                document.getElementById('additional-email').value = formData.email || '';
+                document.getElementById('additional-phone').value = formData.phone || '';
+            }
+        }
+        
+        // Handle initial booking form submission
+        bookingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Store form data in localStorage for potential reuse
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value
+            };
+            localStorage.setItem('lastBookingData', JSON.stringify(formData));
+            
+            // Add delay to prevent accidental duplicate submissions
+            bookButton.disabled = true;
+            bookButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Wird gebucht...';
+            
+            // Set a timestamp to prevent rapid re-clicks
+            localStorage.setItem('lastBookingTime', Date.now().toString());
+            
+            // Submit the form after a short delay
+            setTimeout(() => {
+                this.submit();
+            }, 1000);
+        });
+        
+        // Handle "Register Another Person" button click
+        registerAnotherBtn.addEventListener('click', function() {
+            registrationSuccess.style.display = 'none';
+            additionalRegistrationForm.style.display = 'block';
+            
+            // Try to get saved form data from localStorage again (in case it wasn't loaded earlier)
+            const savedData = localStorage.getItem('lastBookingData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                
+                // Pre-fill the additional registration form with the same data
+                document.getElementById('additional-name').value = formData.name || '';
+                document.getElementById('additional-email').value = formData.email || '';
+                document.getElementById('additional-phone').value = formData.phone || '';
+            }
+        });
+        
+        // Handle "Cancel" button click in additional registration form
+        cancelAdditionalBtn.addEventListener('click', function() {
+            additionalRegistrationForm.style.display = 'none';
+            registrationSuccess.style.display = 'block';
+        });
+        
+        // Handle additional booking form submission
+        additionalBookingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Store form data in localStorage for potential reuse
+            const formData = {
+                name: document.getElementById('additional-name').value,
+                email: document.getElementById('additional-email').value,
+                phone: document.getElementById('additional-phone').value
+            };
+            localStorage.setItem('lastBookingData', JSON.stringify(formData));
+            
+            // Add delay to prevent accidental duplicate submissions
+            additionalBookButton.disabled = true;
+            additionalBookButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Wird gebucht...';
+            
+            // Set a timestamp to prevent rapid re-clicks
+            localStorage.setItem('lastBookingTime', Date.now().toString());
+            
+            // Submit the form after a short delay
+            setTimeout(() => {
+                this.submit();
+            }, 1000);
+        });
+    });
+</script>
 {% endblock %}
