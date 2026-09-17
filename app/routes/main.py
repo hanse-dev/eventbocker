@@ -4,6 +4,7 @@ from ..models.models import Event, Booking, db
 from datetime import datetime, timezone
 from sqlalchemy import text
 from ..utils.email import send_event_registration_confirmation, send_admin_registration_notification
+from ..utils.utils import log_db_error
 import traceback
 import io
 from openpyxl import Workbook
@@ -12,31 +13,13 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    current_app.logger.info("Accessing index route")
-    current_app.logger.info(f"User authenticated: {current_user.is_authenticated}")
-    if current_user.is_authenticated:
-        current_app.logger.info(f"User is admin: {current_user.is_admin}")
-
-    # Debug: Check all events in database
-    all_events = Event.query.all()
-    current_app.logger.info(f"Total events in database: {len(all_events)}")
-    for event in all_events:
-        current_app.logger.info(f"Event in DB: {event.title}, Date: {event.date}, Visible: {event.is_visible}")
-
     if current_user.is_authenticated and current_user.is_admin:
         # Admin sees all future events, including invisible ones
         events = Event.get_future_events(include_invisible=True)
-        current_app.logger.info(f"Admin view - Future events count: {len(events)}")
-        for event in events:
-            current_app.logger.info(f"Admin future event: {event.title}, Date: {event.date}")
-        return render_template('index.html', events=events)
     else:
         # Non-admin users only see visible future events
         events = Event.get_future_events(include_invisible=False)
-        current_app.logger.info(f"User view - Future events count: {len(events)}")
-        for event in events:
-            current_app.logger.info(f"User future event: {event.title}, Date: {event.date}")
-        return render_template('index.html', events=events)
+    return render_template('index.html', events=events)
 
 @bp.route('/event/create', methods=['GET', 'POST'])
 @login_required
@@ -70,14 +53,14 @@ def create_event():
             return redirect(url_for('main.index'))
         except ValueError as e:
             db.session.rollback()
-            current_app.logger.error(f"Fehler bei der Erstellung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+            log_db_error("Fehler bei der Erstellung der Veranstaltung", e)
             flash(str(e), 'danger')
-            return render_template('create_event.html', 
+            return render_template('create_event.html',
                                 default_date=date_str,
                                 form_data=request.form)
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Fehler bei der Erstellung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+            log_db_error("Fehler bei der Erstellung der Veranstaltung", e)
             flash('Ein Fehler ist aufgetreten, während die Veranstaltung erstellt wurde.', 'danger')
             return render_template('create_event.html', 
                                 default_date=date_str,
@@ -90,45 +73,47 @@ def create_event():
 def book_event(event_id):
     """Book an event."""
     event = Event.query.get_or_404(event_id)
-    
+
     if request.method == 'POST':
-        if event.bookings >= event.capacity:
-            flash('Diese Veranstaltung ist leider ausgebucht!', 'error')
-            return redirect(url_for('main.index'))
-        
         name = request.form['name']
         email = request.form['email']
         phone = request.form['phone']
-        
+
         booking = Booking(event_id=event_id, name=name, email=email, phone=phone)
-        
+
         try:
-            # Start transaction
-            db.session.begin_nested()  # Create a savepoint
-            
-            # Add booking and increment counter
+            # Atomically claim a spot: only increments if a free spot is still
+            # available, so concurrent bookings can't oversell the event.
+            result = db.session.execute(
+                text('UPDATE event SET bookings = bookings + 1 WHERE id = :id AND bookings < capacity'),
+                {'id': event_id}
+            )
+            if result.rowcount == 0:
+                db.session.rollback()
+                flash('Diese Veranstaltung ist leider ausgebucht!', 'error')
+                return redirect(url_for('main.index'))
+
             db.session.add(booking)
-            event.bookings += 1
-            
-            # Try to send confirmation email to user first
-            send_event_registration_confirmation(email, event)
-            
-            # Send notification to admin
-            user_data = {'name': name, 'email': email, 'phone': phone}
-            send_admin_registration_notification(event, user_data)
-            
-            # If emails sent successfully, commit the transaction
             db.session.commit()
-            
-            return redirect(url_for('main.book_event', event_id=event_id, success='true'))
-            
+
         except Exception as e:
-            # Roll back to the savepoint
             db.session.rollback()
-            current_app.logger.error(f"Fehler bei der Buchung: {str(e)}\n{traceback.format_exc()}")
+            log_db_error("Fehler bei der Buchung", e)
             flash('Bei der Verarbeitung Ihrer Buchung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.', 'error')
             return redirect(url_for('main.book_event', event_id=event_id))
-    
+
+        # Booking is committed. Emails are a best-effort notification and must
+        # not hold the DB transaction or a worker slot open on a slow/hanging
+        # mail API call (this was blocking new bookings under load).
+        try:
+            send_event_registration_confirmation(email, event)
+            user_data = {'name': name, 'email': email, 'phone': phone}
+            send_admin_registration_notification(event, user_data)
+        except Exception as e:
+            current_app.logger.error(f"Buchung gespeichert, aber Versand der Bestätigungs-E-Mail fehlgeschlagen: {str(e)}\n{traceback.format_exc()}")
+
+        return redirect(url_for('main.book_event', event_id=event_id, success='true'))
+
     return render_template('book_event.html', event=event)
 
 @bp.route('/event/<int:event_id>/edit', methods=['GET', 'POST'])
@@ -168,11 +153,11 @@ def edit_event(event_id):
             
         except ValueError as e:
             db.session.rollback()
-            current_app.logger.error(f"Fehler bei der Aktualisierung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+            log_db_error("Fehler bei der Aktualisierung der Veranstaltung", e)
             flash(str(e), 'danger')
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Fehler bei der Aktualisierung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+            log_db_error("Fehler bei der Aktualisierung der Veranstaltung", e)
             flash('Ein Fehler ist aufgetreten, während die Veranstaltung aktualisiert wurde.', 'danger')
     
     return render_template('edit_event.html', event=event)
@@ -208,12 +193,12 @@ def copy_event(event_id):
         return redirect(url_for('main.index'))
     except ValueError as e:
         db.session.rollback()
-        current_app.logger.error(f"Fehler bei der Kopie der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+        log_db_error("Fehler bei der Kopie der Veranstaltung", e)
         flash(str(e), 'danger')
         return redirect(url_for('main.index'))
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Fehler bei der Kopie der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+        log_db_error("Fehler bei der Kopie der Veranstaltung", e)
         flash('Ein Fehler ist aufgetreten, während die Veranstaltung kopiert wurde.', 'danger')
         return redirect(url_for('main.index'))
 
@@ -229,7 +214,7 @@ def toggle_visibility(event_id):
         return redirect(url_for('main.index'))
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Fehler bei der Aktualisierung der Sichtbarkeit der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+        log_db_error("Fehler bei der Aktualisierung der Sichtbarkeit der Veranstaltung", e)
         flash('Fehler bei der Aktualisierung der Sichtbarkeit der Veranstaltung', 'danger')
         return redirect(url_for('main.index'))
 
@@ -301,7 +286,7 @@ def delete_booking(booking_id):
         return redirect(url_for('main.view_registrations', event_id=booking.event_id))
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Fehler bei der Löschung der Anmeldung: {str(e)}\n{traceback.format_exc()}")
+        log_db_error("Fehler bei der Löschung der Anmeldung", e)
         flash('Ein Fehler ist aufgetreten, während die Anmeldung gelöscht wurde.', 'error')
         return redirect(url_for('main.view_registrations', event_id=booking.event_id))
 
@@ -325,7 +310,7 @@ def delete_event(event_id):
         return redirect(url_for('main.index'))
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Fehler bei der Löschung der Veranstaltung: {str(e)}\n{traceback.format_exc()}")
+        log_db_error("Fehler bei der Löschung der Veranstaltung", e)
         flash('Ein Fehler ist aufgetreten, während die Veranstaltung gelöscht wurde.', 'error')
         return redirect(url_for('main.index'))
 
@@ -341,7 +326,7 @@ def health_check():
             'timestamp': datetime.now(timezone.utc).isoformat()
         }), 200
     except Exception as e:
-        current_app.logger.error(f"Fehler bei der Überprüfung der Gesundheit: {str(e)}\n{traceback.format_exc()}")
+        log_db_error("Fehler bei der Überprüfung der Gesundheit", e)
         return jsonify({
             'status': 'unhealthy',
             'database': 'disconnected',

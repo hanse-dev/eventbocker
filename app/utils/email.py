@@ -62,7 +62,9 @@ def send_email(subject, recipients, template_prefix, **template_context):
             }]
         }
         
-        response = email_service.client.send.create(data=data)
+        # mailjet_rest defaults to a 60s timeout; cap it lower so a slow/stuck
+        # Mailjet API call can't tie up a request worker for that long.
+        response = email_service.client.send.create(data=data, timeout=10)
         if response.status_code > 299:
             raise Exception(f"Mailjet API error: {response.json()}")
             
